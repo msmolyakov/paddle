@@ -7,6 +7,7 @@ import com.wavesplatform.wavesj.matcher.Order;
 import com.wavesplatform.wavesj.matcher.OrderV2;
 import com.wavesplatform.wavesj.transactions.*;
 import im.mak.paddle.actions.*;
+import im.mak.paddle.api.deser.ScriptInfo;
 import im.mak.paddle.exceptions.NodeError;
 
 import java.io.IOException;
@@ -70,6 +71,10 @@ public class Account {
 
     public String address() {
         return wavesAccount.getAddress();
+    }
+
+    public ScriptInfo scriptInfo() {
+        return node.api.scriptInfo(address());
     }
 
     public boolean isSmart() {

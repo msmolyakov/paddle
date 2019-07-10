@@ -17,7 +17,7 @@ Release:
 - [ ] im.mak.paddle.Node extends wavesJ im.mak.paddle.Node; unify node connection and creation
 - [ ] centralized error handling
 - [ ] im.mak.paddle.api `account.data(regex)`
-- [ ] im.mak.paddle.api `account.scriptInfo()`
+- [x] im.mak.paddle.api `account.scriptInfo()`
 - [ ] im.mak.paddle.api `account.transactions(limit, after)` and `node.transactions(account, limit, after)`
 - [ ] `.withProofs(...)` and don't sign if `[0]` is specified
 - [ ] `node.send(invokeScript(alice).dApp("dApp").func(""))`
