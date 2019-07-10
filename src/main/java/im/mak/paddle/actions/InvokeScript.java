@@ -71,9 +71,15 @@ public class InvokeScript implements Action {
         return this;
     }
 
+    public InvokeScript feeAsset(String assetId) {
+        this.feeAssetId = feeAssetId;
+        return this;
+    }
+
     /**
-     * Важно! Не учитывает переводы смарт ассетов через TransferSet.
-     * В таком случае комиссию можно указывать самостоятельно: `invoke.fee(invoke.calcFee() + EXTRA_FEE)`
+     * Important! Does not consider transfers of smart assets through TransferSet in the invoked script.
+     * In this case, the commission can be specified independently:
+     * `invoke.fee(invoke.calcFee() + EXTRA_FEE)`
      */
     @Override
     public long calcFee() {

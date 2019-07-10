@@ -6,8 +6,6 @@ import im.mak.paddle.Node;
 import im.mak.paddle.Version;
 import org.junit.jupiter.api.*;
 
-import java.nio.file.Paths;
-
 import static im.mak.paddle.Node.runDockerNode;
 import static im.mak.paddle.actions.invoke.Arg.arg;
 import static im.mak.paddle.util.PathUtil.path;

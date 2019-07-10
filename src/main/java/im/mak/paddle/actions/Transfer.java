@@ -13,6 +13,7 @@ public class Transfer implements Action {
     public String assetId;
     public String attachment;
     public long fee;
+    public String feeAssetId;
 
     public Transfer(Account from) {
         this.sender = from;
@@ -20,6 +21,7 @@ public class Transfer implements Action {
 
         this.attachment = "";
         this.fee = 0;
+        this.feeAssetId = "WAVES";
     }
 
     public static Transfer transfer(Account from) {
@@ -52,6 +54,11 @@ public class Transfer implements Action {
 
     public Transfer fee(long fee) {
         this.fee = fee;
+        return this;
+    }
+
+    public Transfer feeAsset(String assetId) {
+        this.feeAssetId = assetId;
         return this;
     }
 

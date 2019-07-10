@@ -10,7 +10,6 @@ import im.mak.paddle.actions.*;
 import im.mak.paddle.exceptions.NodeError;
 
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -30,7 +29,6 @@ import static im.mak.paddle.actions.SetScript.setScript;
 import static im.mak.paddle.actions.SponsorFee.sponsorFee;
 import static im.mak.paddle.actions.Transfer.transfer;
 import static im.mak.paddle.actions.WriteData.writeData;
-import static java.nio.file.Files.readAllLines;
 import static im.mak.paddle.actions.exchange.OrderType.BUY;
 import static im.mak.paddle.actions.exchange.OrderType.SELL;
 
@@ -43,7 +41,7 @@ public class Account {
     public Account(String seedText, Node worksWith, long initWavesBalance) {
         this.seedText = seedText;
         this.node = worksWith;
-        wavesAccount = PrivateKeyAccount.fromSeed(this.seedText, 0, node.wavesNode.getChainId());
+        wavesAccount = PrivateKeyAccount.fromSeed(this.seedText, 0, node.chainId());
 
         if (initWavesBalance > 0) {
             this.node.rich.transfers(t -> t.amount(initWavesBalance).to(this));
@@ -86,7 +84,7 @@ public class Account {
         }
     }
 
-    public long assetBalance(String assetId) {
+    public long balance(String assetId) {
         try {
             return node.wavesNode.getBalance(address(), assetId);
         } catch (IOException e) {
@@ -126,13 +124,17 @@ public class Account {
         return ((ByteString) data(key).getValue()).getBytes();
     }
 
+    public String sign(byte[] bytes) {
+        return wavesAccount.sign(bytes);
+    }
+
     public IssueTransaction issues(Consumer<Issue> i) {
         Issue is = issue(this);
         i.accept(is);
 
         try {
             return (IssueTransaction) node.waitForTransaction(node.wavesNode.issueAsset(is.sender.wavesAccount,
-                    node.getChainId(), is.name, is.description, is.quantity, is.decimals,
+                    node.chainId(), is.name, is.description, is.quantity, is.decimals,
                     is.isReissuable, is.compiledScript, is.calcFee()));
         } catch (IOException e) {
             throw new NodeError(e);
@@ -145,7 +147,7 @@ public class Account {
 
         try {
             return (TransferTransaction) node.waitForTransaction(node.wavesNode.transfer(tr.sender.wavesAccount,
-                    tr.recipient, tr.amount, tr.assetId, tr.calcFee(), "WAVES", tr.attachment));
+                    tr.recipient, tr.amount, tr.assetId, tr.calcFee(), tr.feeAssetId, tr.attachment));
         } catch (IOException e) {
             throw new NodeError(e);
         }
@@ -157,7 +159,7 @@ public class Account {
 
         try {
             return (ReissueTransaction) node.waitForTransaction(node.wavesNode.reissueAsset(ri.sender.wavesAccount,
-                    node.getChainId(), ri.assetId, ri.quantity, ri.isReissuable, ri.calcFee()));
+                    node.chainId(), ri.assetId, ri.quantity, ri.isReissuable, ri.calcFee()));
         } catch (IOException e) {
             throw new NodeError(e);
         }
@@ -169,7 +171,7 @@ public class Account {
 
         try {
             return (BurnTransaction) node.waitForTransaction(node.wavesNode.burnAsset(
-                    bu.sender.wavesAccount, node.getChainId(), bu.assetId, bu.quantity, bu.calcFee()));
+                    bu.sender.wavesAccount, node.chainId(), bu.assetId, bu.quantity, bu.calcFee()));
         } catch (IOException e) {
             throw new NodeError(e);
         }
@@ -216,7 +218,7 @@ public class Account {
 
         try {
             return (LeaseCancelTransaction) node.waitForTransaction(node.wavesNode.cancelLease(
-                    lc.sender.wavesAccount, node.wavesNode.getChainId(), lc.leaseId, lc.calcFee()));
+                    lc.sender.wavesAccount, node.chainId(), lc.leaseId, lc.calcFee()));
         } catch (IOException e) {
             throw new NodeError(e);
         }
@@ -228,7 +230,7 @@ public class Account {
 
         try {
             return (AliasTransaction) node.waitForTransaction(node.wavesNode.alias(
-                    ca.sender.wavesAccount, node.wavesNode.getChainId(), ca.alias, ca.calcFee()));
+                    ca.sender.wavesAccount, node.chainId(), ca.alias, ca.calcFee()));
         } catch (IOException e) {
             throw new NodeError(e);
         }
@@ -266,7 +268,7 @@ public class Account {
 
         try {
             return (SetScriptTransaction) node.waitForTransaction(node.wavesNode.setScript(
-                    ss.sender.wavesAccount, ss.compiledScript, node.getChainId(), ss.calcFee()));
+                    ss.sender.wavesAccount, ss.compiledScript, node.chainId(), ss.calcFee()));
         } catch (IOException e) {
             throw new NodeError(e);
         }
@@ -290,7 +292,7 @@ public class Account {
 
         try {
             return (SetAssetScriptTransaction) node.waitForTransaction(node.wavesNode.setAssetScript(
-                    sa.sender.wavesAccount, node.getChainId(), sa.assetId, sa.compiledScript, sa.calcFee()));
+                    sa.sender.wavesAccount, node.chainId(), sa.assetId, sa.compiledScript, sa.calcFee()));
         } catch (IOException e) {
             throw new NodeError(e);
         }
@@ -302,7 +304,7 @@ public class Account {
 
         try {
             return (InvokeScriptTransaction) node.waitForTransaction(node.wavesNode.invokeScript(
-                    is.sender.wavesAccount, is.sender.node.wavesNode.getChainId(),
+                    is.sender.wavesAccount, is.sender.node.chainId(),
                     is.dApp, is.call, is.payments, is.calcFee(), is.feeAssetId));
         } catch (IOException e) {
             throw new NodeError(e);

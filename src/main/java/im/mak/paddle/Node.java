@@ -8,8 +8,6 @@ import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.PortBinding;
 import com.wavesplatform.wavesj.Transaction;
-import com.wavesplatform.wavesj.transactions.IssueTransaction;
-import im.mak.paddle.actions.Issue;
 import im.mak.paddle.api.Api;
 import im.mak.paddle.exceptions.NodeError;
 
@@ -81,7 +79,7 @@ public class Node {
             Thread.sleep(8000);
             for (int repeat = 0; repeat < 6; repeat++) {
                 try {
-                    node.getVersion();
+                    node.version();
                     isNodeReady = true;
                     break;
                 } catch (NodeError e) {
@@ -98,9 +96,17 @@ public class Node {
         }
     }
 
-    private String getVersion() {
+    private String version() {
         try {
             return wavesNode.getVersion();
+        } catch (IOException e) {
+            throw new NodeError(e);
+        }
+    }
+
+    public int height() {
+        try {
+            return wavesNode.getHeight();
         } catch (IOException e) {
             throw new NodeError(e);
         }
@@ -143,7 +149,38 @@ public class Node {
         throw new NodeError("Could not wait for transaction " + id + " in 10 seconds");
     }
 
-    public byte getChainId() {
+    public int waitForHeight(int target, long durationInMilliseconds) {
+        int current = 0;
+        int pollingInterval = 1000;
+        for (int timeSpent = 0; timeSpent < durationInMilliseconds; timeSpent += pollingInterval) {
+            try {
+                current = height();
+                if (current >= target)
+                    return current;
+            } catch (NodeError ignored) {}
+
+            if (timeSpent + pollingInterval < durationInMilliseconds)
+                try {
+                    Thread.sleep(pollingInterval);
+                } catch (InterruptedException ignored) {}
+        }
+        throw new NodeError("Could not wait for height " + target + " in " + (durationInMilliseconds/1000) +
+                " seconds. Current height: " + current);
+    }
+
+    public int waitForHeight(int expectedHeight) {
+        return waitForHeight(expectedHeight, 60_000);
+    }
+
+    public int waitNBlocks(int blocksCount, long durationInMilliseconds) {
+        return waitForHeight(height() + blocksCount, durationInMilliseconds);
+    }
+
+    public int waitNBlocks(int blocksCount) {
+        return waitNBlocks(blocksCount, 60_000);
+    }
+
+    public byte chainId() {
         return wavesNode.getChainId();
     }
 
