@@ -8,6 +8,7 @@ MVP:
 - [x] AssertJ
 - [x] move to own project
 - [x] node.waitForHeight(long)
+- [ ] NFT api
 - [ ] release WavesJ 0.16
 - [ ] tutorial article to Habr (ru, en), Medium + Travis howto
 
@@ -21,6 +22,7 @@ Release:
 - [ ] im.mak.paddle.api `account.transactions(limit, after)` and `node.transactions(account, limit, after)`
 - [ ] `.withProofs(...)` and don't sign if `[0]` is specified
 - [ ] `node.send(invokeScript(alice).dApp("dApp").func(""))`
+- [ ] `git describe` for version
 
 IDEAS:
 * ${var} in contracts. Access from Env instance with specified profile
