@@ -8,12 +8,13 @@ MVP:
 - [x] AssertJ
 - [x] move to own project
 - [x] node.waitForHeight(long)
-- [ ] NFT api
-- [ ] release WavesJ 0.16
+- [x] release WavesJ 0.15.3
 - [ ] tutorial article to Habr (ru, en), Medium + Travis howto
 
 Release:
-- [ ] as setScript: truffle way (deploy, test/main values, etc)
+- [x] `account.issuesNft()`
+- [ ] NFT api
+- [ ] plugin for setScript/setAssetScript (deploy, test/main values, etc)
 - [ ] OrderV3 (+ WavesJ)
 - [ ] im.mak.paddle.Node extends wavesJ im.mak.paddle.Node; unify node connection and creation
 - [ ] centralized error handling

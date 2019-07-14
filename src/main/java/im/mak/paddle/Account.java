@@ -21,6 +21,7 @@ import static im.mak.paddle.actions.CreateAlias.createAlias;
 import static im.mak.paddle.actions.Exchange.exchange;
 import static im.mak.paddle.actions.InvokeScript.invokeScript;
 import static im.mak.paddle.actions.Issue.issue;
+import static im.mak.paddle.actions.IssueNft.issueNft;
 import static im.mak.paddle.actions.Lease.lease;
 import static im.mak.paddle.actions.LeaseCancel.leaseCancel;
 import static im.mak.paddle.actions.MassTransfer.massTransfer;
@@ -144,6 +145,16 @@ public class Account {
         } catch (IOException e) {
             throw new NodeError(e);
         }
+    }
+
+    public IssueTransaction issuesNft(Consumer<IssueNft> i) {
+        IssueNft nft = issueNft(this);
+        i.accept(nft);
+        return issues(a -> {
+            a.name(nft.name).description(nft.description).quantity(nft.quantity)
+                    .decimals(nft.decimals).reissuable(nft.isReissuable).fee(nft.calcFee());
+            a.compiledScript = nft.compiledScript;
+        });
     }
 
     public TransferTransaction transfers(Consumer<Transfer> t) {
