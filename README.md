@@ -13,6 +13,7 @@ MVP:
 
 Release:
 - [x] `account.issuesNft()`
+- [ ] alias in InvokeScript's dApp
 - [ ] NFT api
 - [ ] plugin for setScript/setAssetScript (deploy, test/main values, etc)
 - [ ] OrderV3 (+ WavesJ)
