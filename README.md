@@ -1,41 +1,66 @@
-MVP:
-- [x] alice.exchanges()
-- [x] correctly calc all fees
-- [x] wrap wavesJ IOExceptions in my own
-- [x] `alice.invokes(i -> i.dApp(dApp).func(""))`
-- [x] fix: REST API key
-- [ ] save test logs in target/datetime subdir + waves.log + test.log; verbose mode
-- [x] AssertJ
-- [x] move to own project
-- [x] node.waitForHeight(long)
-- [x] release WavesJ 0.15.3
-- [ ] tutorial article to Habr (ru, en), Medium + Travis howto
+# Paddle for Waves
 
-Release:
-- [x] `account.issuesNft()`
-- [ ] alias in InvokeScript's dApp
-- [ ] NFT api
-- [ ] plugin for setScript/setAssetScript (deploy, test/main values, etc)
-- [ ] OrderV3 (+ WavesJ)
-- [ ] im.mak.paddle.Node extends wavesJ im.mak.paddle.Node; unify node connection and creation
-- [ ] centralized error handling
-- [ ] im.mak.paddle.api `account.data(regex)`
-- [x] im.mak.paddle.api `account.scriptInfo()`
-- [ ] im.mak.paddle.api `account.transactions(limit, after)` and `node.transactions(account, limit, after)`
-- [ ] `.withProofs(...)` and don't sign if `[0]` is specified
-- [ ] `node.send(invokeScript(alice).dApp("dApp").func(""))`
-- [ ] `git describe` for version
+## What is Paddle?
 
-IDEAS:
-* ${var} in contracts. Access from Env instance with specified profile
-* imports in contracts + imports hub
-* unit testing
-* is volume needed?
-* alice.placesOrder(); alice.cancelsOrder(); add matcher + matcher.log into target. Fix: remove deprecated matcher settings from waves.conf
-* create maven archetype
-* status badges for Github
-* support for Waves master branch
-* support in IntelliJ plugin
-* is local.conf works and needed?
-* multi-stage build
-* Scala-friendly API
+Paddle is a Java library to write tests for your dApps and other smart contracts on Waves blockchain.
+
+## Getting started
+
+### Installation
+
+Add Paddle as dependency to your project.
+
+#### Maven
+
+Create new project from Maven archetype:
+
+```bash
+mvn archetype:generate -DarchetypeGroupId=im.mak -DarchetypeArtifactId=paddle -DarchetypeVersion=0.1
+```
+
+Or in your current project add into `pom.xml`:
+
+```xml
+<dependency>
+    <groupId>im.mak</groupId>
+    <artifactId>paddle</artifactId>
+    <version>0.1</version>
+</dependency>
+```
+
+### First test with Paddle
+
+If you created project from the Maven archetype or use JUnit, add new Java class:
+
+```java
+class FirstTest extends PaddleTest {
+    private Node node;
+    private String assetId;
+    
+    @BeforeAll
+    void before() {
+        node = runDockerNode();
+
+        alice = new Account(node, 10_00000000L);
+        bob = new Account(node);
+        
+        assetId = alice.issues(i -> i.name("My Asset").script("true")).getId().toString();
+    }
+    
+    @AfterAll
+    void after() {
+        node.stopDockerNode();
+    }
+    
+    @Test
+    void canSendSmartAsset() {
+        alice.transfers(t -> t.to(bob).amount(10).asset(assetId));
+        
+        assertThat(bob.balance(assetId)).isEqualTo(10);
+    }
+}
+```
+
+### What next?
+
+See tests in `e2e` package in the Paddle repository for examples how to use Paddle.
