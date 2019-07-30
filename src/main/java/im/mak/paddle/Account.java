@@ -119,16 +119,10 @@ public class Account {
     }
 
     public IssueTransaction issues(Consumer<Issue> i) {
-        Issue is = issue(this);
-        i.accept(is);
+        Issue issue = issue(this);
+        i.accept(issue);
 
-        try {
-            return (IssueTransaction) node.waitForTransaction(node.wavesNode.issueAsset(is.sender.wavesAccount,
-                    node.chainId(), is.name, is.description, is.quantity, is.decimals,
-                    is.isReissuable, is.compiledScript, is.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
+        return node.send(issue);
     }
 
     public IssueTransaction issuesNft(Consumer<IssueNft> i) {
@@ -145,169 +139,90 @@ public class Account {
         Transfer tr = transfer(this);
         t.accept(tr);
 
-        try {
-            return (TransferTransaction) node.waitForTransaction(node.wavesNode.transfer(tr.sender.wavesAccount,
-                    tr.recipient, tr.amount, tr.assetId, tr.calcFee(), tr.feeAssetId, tr.attachment));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
+        return node.send(tr);
     }
 
     public ReissueTransaction reissues(Consumer<Reissue> r) {
         Reissue ri = reissue(this);
         r.accept(ri);
 
-        try {
-            return (ReissueTransaction) node.waitForTransaction(node.wavesNode.reissueAsset(ri.sender.wavesAccount,
-                    node.chainId(), ri.assetId, ri.quantity, ri.isReissuable, ri.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
+        return node.send(ri);
     }
 
     public BurnTransaction burns(Consumer<Burn> b) {
         Burn bu = burn(this);
         b.accept(bu);
 
-        try {
-            return (BurnTransaction) node.waitForTransaction(node.wavesNode.burnAsset(
-                    bu.sender.wavesAccount, node.chainId(), bu.assetId, bu.quantity, bu.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
+        return node.send(bu);
     }
 
     public ExchangeTransaction exchanges(Consumer<Exchange> e) {
         Exchange ex = exchange(this);
         e.accept(ex);
 
-        long now = System.currentTimeMillis();
-        long nowPlus29Days = now + 2505600000L;
-
-        OrderV2 buyV2 = new OrderV2(ex.buy.sender.wavesAccount, ex.buy.matcher.wavesAccount,
-                ex.buy.type == BUY ? Order.Type.BUY : Order.Type.SELL, ex.buy.pair, ex.buy.amount, ex.buy.price,
-                now, nowPlus29Days, ex.buy.calcMatcherFee(), com.wavesplatform.wavesj.matcher.Order.V2);
-        OrderV2 sellV2 = new OrderV2(ex.sell.sender.wavesAccount, ex.sell.matcher.wavesAccount,
-                ex.sell.type == SELL ? Order.Type.SELL : Order.Type.BUY, ex.sell.pair, ex.sell.amount, ex.sell.price,
-                now, nowPlus29Days, ex.buy.calcMatcherFee(), com.wavesplatform.wavesj.matcher.Order.V2);
-
-        try {
-            return (ExchangeTransaction) node.waitForTransaction(node.wavesNode.exchange(ex.sender.wavesAccount,
-                    buyV2, sellV2, ex.calcAmount(), ex.calcPrice(),
-                    ex.calcBuyMatcherFee(), ex.calcSellMatcherFee(), ex.calcFee()));
-        } catch (IOException ioe) {
-            throw new NodeError(ioe);
-        }
+        return node.send(ex);
     }
 
     public LeaseTransaction leases(Consumer<Lease> lease) {
         Lease l = lease(this);
         lease.accept(l);
 
-        try {
-            return (LeaseTransaction) node.waitForTransaction(node.wavesNode.lease(
-                    l.sender.wavesAccount, l.recipient, l.amount, l.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
+        return node.send(l);
     }
 
     public LeaseCancelTransaction cancelsLease(Consumer<LeaseCancel> l) {
         LeaseCancel lc = leaseCancel(this);
         l.accept(lc);
 
-        try {
-            return (LeaseCancelTransaction) node.waitForTransaction(node.wavesNode.cancelLease(
-                    lc.sender.wavesAccount, node.chainId(), lc.leaseId, lc.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
+        return node.send(lc);
     }
 
     public AliasTransaction createsAlias(Consumer<CreateAlias> a) {
         CreateAlias ca = createAlias(this);
         a.accept(ca);
 
-        try {
-            return (AliasTransaction) node.waitForTransaction(node.wavesNode.alias(
-                    ca.sender.wavesAccount, node.chainId(), ca.alias, ca.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
+        return node.send(ca);
     }
 
     public MassTransferTransaction massTransfers(Consumer<MassTransfer> m) {
         MassTransfer mt = massTransfer(this);
         m.accept(mt);
 
-        try {
-            List<com.wavesplatform.wavesj.Transfer> transfers = new LinkedList<>();
-            mt.transfers.forEach(t -> transfers.add(new com.wavesplatform.wavesj.Transfer(t.recipient, t.amount)));
-            return (MassTransferTransaction) node.waitForTransaction(node.wavesNode.massTransfer(
-                    mt.sender.wavesAccount, mt.assetId, transfers, mt.calcFee(), mt.attachment));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
+        return node.send(mt);
     }
 
     public DataTransaction writes(Consumer<WriteData> d) {
         WriteData wd = writeData(this);
         d.accept(wd);
 
-        try {
-            return (DataTransaction) node.waitForTransaction(node.wavesNode.data(
-                    wd.sender.wavesAccount, wd.data, wd.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
+        return node.send(wd);
     }
 
     public SetScriptTransaction setsScript(Consumer<SetScript> s) {
         SetScript ss = setScript(this);
         s.accept(ss);
 
-        try {
-            return (SetScriptTransaction) node.waitForTransaction(node.wavesNode.setScript(
-                    ss.sender.wavesAccount, ss.compiledScript, node.chainId(), ss.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
+        return node.send(ss);
     }
 
     public SponsorTransaction sponsors(Consumer<SponsorFee> s) {
         SponsorFee sf = sponsorFee(this);
         s.accept(sf);
 
-        try {
-            return (SponsorTransaction) node.waitForTransaction(node.wavesNode.sponsorAsset(
-                    sf.sender.wavesAccount, sf.assetId, sf.minSponsoredAssetFee, sf.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
+        return node.send(sf);
     }
 
     public SetAssetScriptTransaction setsAssetScript(Consumer<SetAssetScript> s) {
         SetAssetScript sa = setAssetScript(this);
         s.accept(sa);
 
-        try {
-            return (SetAssetScriptTransaction) node.waitForTransaction(node.wavesNode.setAssetScript(
-                    sa.sender.wavesAccount, node.chainId(), sa.assetId, sa.compiledScript, sa.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
+        return node.send(sa);
     }
 
     public InvokeScriptTransaction invokes(Consumer<InvokeScript> i) {
         InvokeScript is = invokeScript(this);
         i.accept(is);
 
-        try {
-            return (InvokeScriptTransaction) node.waitForTransaction(node.wavesNode.invokeScript(
-                    is.sender.wavesAccount, is.sender.node.chainId(),
-                    is.dApp, is.call, is.payments, is.calcFee(), is.feeAssetId));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
+        return node.send(is);
     }
 }
