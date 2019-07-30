@@ -21,7 +21,7 @@ class IssueNftTest {
 
     @BeforeAll
     void before() {
-        node = runDockerNode(Version.MAINNET);
+        node = runDockerNode();
 
         alice = new Account(node, 10_00000000L);
         bob = new Account(node);

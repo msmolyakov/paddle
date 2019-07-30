@@ -14,7 +14,7 @@ class NodeTest {
 
     @BeforeAll
     void before() {
-        node = runDockerNode(Version.MAINNET);
+        node = runDockerNode();
     }
 
     @AfterAll
