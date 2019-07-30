@@ -3,8 +3,6 @@ package im.mak.paddle.e2e;
 import com.wavesplatform.wavesj.Transaction;
 import im.mak.paddle.Account;
 import im.mak.paddle.Node;
-import im.mak.paddle.Version;
-import im.mak.paddle.util.PaddleTest;
 import org.junit.jupiter.api.*;
 
 import static im.mak.paddle.Node.runDockerNode;
@@ -14,14 +12,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.MethodOrderer.Alphanumeric;
 
-class WalletTest extends PaddleTest {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class WalletTest {
 
     private Node node;
     private Account alice, bob, carol;
 
     @BeforeAll
     void before() {
-        node = runDockerNode(Version.MAINNET);
+        node = runDockerNode();
 
         alice = new Account(node, 1_00000000L);
         bob = new Account(node, 1_00000000L);

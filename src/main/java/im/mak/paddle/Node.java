@@ -7,6 +7,7 @@ import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.PortBinding;
+import com.wavesplatform.wavesj.DataEntry;
 import com.wavesplatform.wavesj.Transaction;
 import im.mak.paddle.api.Api;
 import im.mak.paddle.exceptions.NodeError;
@@ -20,9 +21,9 @@ import java.util.Map;
 
 public class Node {
 
-    DockerClient docker;
-    String containerId = "";
-    public com.wavesplatform.wavesj.Node wavesNode;
+    private DockerClient docker;
+    private String containerId = "";
+    private com.wavesplatform.wavesj.Node wavesNode;
     public Account rich;
 
     public Api api;
@@ -96,12 +97,30 @@ public class Node {
         }
     }
 
+    public static Node runDockerNode() {
+        return runDockerNode(Version.MAINNET);
+    }
+
+    public void stopDockerNode() {
+        try {
+            docker.killContainer(containerId);
+            docker.removeContainer(containerId);
+            docker.close();
+        } catch (DockerException | InterruptedException e) {
+            throw new NodeError(e);
+        }
+    }
+
     private String version() {
         try {
             return wavesNode.getVersion();
         } catch (IOException e) {
             throw new NodeError(e);
         }
+    }
+
+    public byte chainId() {
+        return wavesNode.getChainId();
     }
 
     public int height() {
@@ -112,12 +131,34 @@ public class Node {
         }
     }
 
-    public void stopDockerNode() {
+    public long balance(String address) {
         try {
-            docker.killContainer(containerId);
-            docker.removeContainer(containerId);
-            docker.close();
-        } catch (DockerException | InterruptedException e) {
+            return wavesNode.getBalance(address);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        }
+    }
+
+    public long balance(String address, String assetId) {
+        try {
+            return wavesNode.getBalance(address, assetId);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        }
+    }
+
+    public List<DataEntry> data(String address) {
+        try {
+            return wavesNode.getData(address);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        }
+    }
+
+    public DataEntry dataByKey(String address, String key) {
+        try {
+            return wavesNode.getDataByKey(address, key);
+        } catch (IOException e) {
             throw new NodeError(e);
         }
     }
@@ -134,6 +175,14 @@ public class Node {
 
     public boolean isSmart(Account account) {
         return isSmart(account.address());
+    }
+
+    public String compileScript(String s) {
+        try {
+            return wavesNode.compileScript(s);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        }
     }
 
     public Transaction waitForTransaction(String id) {
@@ -178,18 +227,6 @@ public class Node {
 
     public int waitNBlocks(int blocksCount) {
         return waitNBlocks(blocksCount, 60_000);
-    }
-
-    public byte chainId() {
-        return wavesNode.getChainId();
-    }
-
-    public String compileScript(String s) {
-        try {
-            return wavesNode.compileScript(s);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
     }
 
 }

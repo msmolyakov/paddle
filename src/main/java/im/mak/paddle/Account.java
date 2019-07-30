@@ -83,51 +83,35 @@ public class Account {
     }
 
     public long balance() {
-        try {
-            return node.wavesNode.getBalance(address());
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
+        return node.balance(address());
     }
 
     public long balance(String assetId) {
-        try {
-            return node.wavesNode.getBalance(address(), assetId);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
+        return node.balance(address(), assetId);
     }
 
     public List<DataEntry> data() {
-        try {
-            return node.wavesNode.getData(address());
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
+        return node.data(address());
     }
 
-    public DataEntry data(String key) {
-        try {
-            return node.wavesNode.getDataByKey(address(), key);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
+    public DataEntry dataByKey(String key) {
+        return node.dataByKey(address(), key);
     }
 
     public String dataStr(String key) {
-        return (String) data(key).getValue();
+        return (String) dataByKey(key).getValue();
     }
 
     public long dataInt(String key) {
-        return (long) data(key).getValue();
+        return (long) dataByKey(key).getValue();
     }
 
     public boolean dataBool(String key) {
-        return (boolean) data(key).getValue();
+        return (boolean) dataByKey(key).getValue();
     }
 
     public byte[] dataBin(String key) {
-        return ((ByteString) data(key).getValue()).getBytes();
+        return ((ByteString) dataByKey(key).getValue()).getBytes();
     }
 
     public String sign(byte[] bytes) {
