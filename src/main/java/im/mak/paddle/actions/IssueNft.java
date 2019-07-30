@@ -7,7 +7,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Random;
 
-import static im.mak.paddle.Constants.*;
+import static im.mak.paddle.Constants.EXTRA_FEE;
+import static im.mak.paddle.Constants.MIN_FEE;
 import static java.nio.file.Files.readAllLines;
 
 public class IssueNft implements Action {
