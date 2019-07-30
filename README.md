@@ -33,7 +33,15 @@ Or in your current project add into `pom.xml`:
 If you created project from the Maven archetype or use JUnit, add new Java class:
 
 ```java
-class FirstTest extends PaddleTest {
+import im.mak.paddle.Account;
+import im.mak.paddle.Node;
+import org.junit.jupiter.api.*;
+
+import static im.mak.paddle.Node.runDockerNode;
+import static org.assertj.core.api.Assertions.assertThat;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class FirstTest {
     private Node node;
     private String assetId;
     
@@ -44,7 +52,7 @@ class FirstTest extends PaddleTest {
         alice = new Account(node, 10_00000000L);
         bob = new Account(node);
         
-        assetId = alice.issues(i -> i.name("My Asset").script("true")).getId().toString();
+        assetId = alice.issues(a -> a.name("My Asset").script("2 * 2 == 4")).getId().toString();
     }
     
     @AfterAll

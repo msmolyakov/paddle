@@ -61,6 +61,8 @@ public class Order {
         return this;
     }
 
+    //TODO expiration
+
     public long calcMatcherFee() {
         if (matcherFee > 0)
             return matcherFee;
