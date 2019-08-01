@@ -71,4 +71,6 @@ class FirstTest {
 
 ### What next?
 
-See tests in `e2e` package in the Paddle repository for examples how to use Paddle.
+See tests in [e2e](https://github.com/msmolyakov/paddle/tree/master/src/test/java/im/mak/paddle/e2e) package in the repository for examples how the Paddle can be used.
+
+[paddle-example](https://github.com/msmolyakov/paddle-example) - project boilerplate with example of dApp and tests with Paddle.
