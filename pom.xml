@@ -31,6 +31,13 @@
         <developerConnection>scm:git:git@github.com:msmolyakov/paddle.git</developerConnection>
     </scm>
 
+    <developers>
+        <developer>
+            <name>Maxim Smolyakov</name>
+            <email>smolyakovmaxim@gmail.com</email>
+        </developer>
+    </developers>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -155,9 +162,8 @@
 
 
     <profiles>
-        <!-- GPG Signature on release -->
         <profile>
-            <id>release-sign-artifacts</id>
+            <id>release</id>
             <activation>
                 <property>
                     <name>performRelease</name>
