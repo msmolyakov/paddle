@@ -48,7 +48,7 @@ class FirstTest {
         alice = new Account(node, 10_00000000L);
         bob = new Account(node);
         
-        assetId = alice.issues(a -> a.name("My Asset").script("2 * 2 == 4")).getId().toString();
+        assetId = alice.issues(a -> a.name("My Asset").quantity(42).script("2 * 2 == 4")).getId().toString();
     }
     
     @AfterAll
@@ -58,9 +58,9 @@ class FirstTest {
     
     @Test
     void canSendSmartAsset() {
-        alice.transfers(t -> t.to(bob).amount(10).asset(assetId));
+        alice.transfers(t -> t.to(bob).amount(42).asset(assetId));
         
-        assertThat(bob.balance(assetId)).isEqualTo(10);
+        assertThat(bob.balance(assetId)).isEqualTo(42);
     }
 }
 ```
