@@ -36,7 +36,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class FirstTest {
+
     private Node node;
+    private Account alice, bob;
     private String assetId;
     
     @BeforeAll
