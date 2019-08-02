@@ -12,13 +12,7 @@ Add Paddle as dependency to your project.
 
 #### Maven
 
-Create new project from Maven archetype:
-
-```bash
-mvn archetype:generate -DarchetypeGroupId=im.mak -DarchetypeArtifactId=paddle -DarchetypeVersion=0.1
-```
-
-Or in your current project add into `pom.xml`:
+In your project add into `pom.xml`:
 
 ```xml
 <dependency>
