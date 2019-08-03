@@ -1,8 +1,8 @@
 package im.mak.paddle.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wavesplatform.wavesj.transactions.IssueTransaction;
 import im.mak.paddle.api.deser.AssetDetails;
+import im.mak.paddle.api.deser.transactions.IssueTx;
 import im.mak.paddle.api.deser.ScriptInfo;
 import im.mak.paddle.api.deser.StateChangesInfo;
 import im.mak.paddle.api.exceptions.ApiError;
@@ -60,9 +60,9 @@ public class Api {
         }
     }
 
-    public List<IssueTransaction> nft(String address, int limit, String after) {
+    public List<IssueTx> nft(String address, int limit, String after) {
         try {
-            Response<List<IssueTransaction>> r = nodeApi.nft(address, limit, after).execute();
+            Response<List<IssueTx>> r = nodeApi.nft(address, limit, after).execute();
             if (!r.isSuccessful()) throw parseError(r);
             return r.body();
         } catch (IOException e) {
@@ -70,15 +70,15 @@ public class Api {
         }
     }
 
-    public List<IssueTransaction> nft(String address, int limit) {
+    public List<IssueTx> nft(String address, int limit) {
         return nft(address, limit, null);
     }
 
-    public List<IssueTransaction> nft(String address, String after) {
+    public List<IssueTx> nft(String address, String after) {
         return nft(address, 10000, after);
     }
 
-    public List<IssueTransaction> nft(String address) {
+    public List<IssueTx> nft(String address) {
         return nft(address, null);
     }
 

@@ -1,7 +1,7 @@
 package im.mak.paddle.api;
 
-import com.wavesplatform.wavesj.transactions.IssueTransaction;
 import im.mak.paddle.api.deser.AssetDetails;
+import im.mak.paddle.api.deser.transactions.IssueTx;
 import im.mak.paddle.api.deser.ScriptInfo;
 import im.mak.paddle.api.deser.StateChangesInfo;
 import retrofit2.Call;
@@ -20,7 +20,7 @@ public interface NodeApi {
     Call<AssetDetails> assetDetails(@Path("assetId") String assetId, @Query("full") boolean full);
 
     @GET("assets/nft/{address}/limit/{limit}")
-    Call<List<IssueTransaction>> nft(
+    Call<List<IssueTx>> nft(
             @Path("address") String address,
             @Path("limit") int limit,
             @Query("after") String after

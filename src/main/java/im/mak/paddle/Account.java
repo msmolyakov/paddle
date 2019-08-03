@@ -5,6 +5,7 @@ import com.wavesplatform.wavesj.DataEntry;
 import com.wavesplatform.wavesj.PrivateKeyAccount;
 import com.wavesplatform.wavesj.transactions.*;
 import im.mak.paddle.actions.*;
+import im.mak.paddle.api.deser.transactions.IssueTx;
 import im.mak.paddle.api.deser.ScriptInfo;
 
 import java.util.List;
@@ -67,19 +68,19 @@ public class Account {
         return node.balance(address(), assetId);
     }
 
-    public List<IssueTransaction> nft(int limit, String after) {
+    public List<IssueTx> nft(int limit, String after) {
         return node.api.nft(address(), limit, after);
     }
 
-    public List<IssueTransaction> nft(int limit) {
+    public List<IssueTx> nft(int limit) {
         return node.api.nft(address(), limit);
     }
 
-    public List<IssueTransaction> nft(String after) {
+    public List<IssueTx> nft(String after) {
         return node.api.nft(address(), after);
     }
 
-    public List<IssueTransaction> nft() {
+    public List<IssueTx> nft() {
         return node.api.nft(address());
     }
 
