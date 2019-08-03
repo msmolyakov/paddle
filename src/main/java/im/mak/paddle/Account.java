@@ -67,6 +67,22 @@ public class Account {
         return node.balance(address(), assetId);
     }
 
+    public List<IssueTransaction> nft(int limit, String after) {
+        return node.api.nft(address(), limit, after);
+    }
+
+    public List<IssueTransaction> nft(int limit) {
+        return node.api.nft(address(), limit);
+    }
+
+    public List<IssueTransaction> nft(String after) {
+        return node.api.nft(address(), after);
+    }
+
+    public List<IssueTransaction> nft() {
+        return node.api.nft(address());
+    }
+
     public List<DataEntry> data() {
         return node.data(address());
     }

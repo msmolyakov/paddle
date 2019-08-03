@@ -2,7 +2,6 @@ package im.mak.paddle.e2e;
 
 import im.mak.paddle.Account;
 import im.mak.paddle.Node;
-import im.mak.paddle.Version;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -45,8 +44,8 @@ class IssueNftTest {
                 () -> assertThat(alice.balance()).isEqualTo(initBalance - MIN_FEE * 6),
                 () -> assertThat(alice.balance(nftId)).isEqualTo(0),
 
-                () -> assertThat(bob.balance(nftId)).isEqualTo(1)
-                //TODO check API nft by address
+                () -> assertThat(bob.balance(nftId)).isEqualTo(1),
+                () -> assertThat(bob.nft()).hasSize(1)
         );
     }
 

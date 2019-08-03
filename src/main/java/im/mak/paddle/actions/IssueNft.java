@@ -25,7 +25,7 @@ public class IssueNft implements Action {
     public IssueNft(Account from) {
         this.sender = from;
 
-        this.name = "Asset " + new Random().nextInt(1000);
+        this.name = "NFT " + new Random().nextInt(1000);
         this.description = "";
         this.quantity = 1;
         this.decimals = 0;

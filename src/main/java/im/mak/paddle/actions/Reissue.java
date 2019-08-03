@@ -16,8 +16,8 @@ public class Reissue implements Action {
     public Reissue(Account from) {
         this.sender = from;
 
-        this.quantity = 10000_00000000L; //TODO а надо ли?
-        this.isReissuable = true; //TODO а надо ли?
+        this.quantity = 10000_00000000L; //TODO may be 0 as default?
+        this.isReissuable = true;
         this.fee = 0;
     }
 
