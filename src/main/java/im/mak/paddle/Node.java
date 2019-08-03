@@ -32,6 +32,7 @@ public class Node {
 
     public Api api;
 
+    //TODO separate with docker node
     public static Node connectToNode(String uri, char chainId) {
         try {
             Node node = new Node();
@@ -39,20 +40,23 @@ public class Node {
 
             node.api = new Api(node.wavesNode.getUri());
 
-            node.rich = new Account("create genesis wallet devnet-0-d", node);
+            node.rich = new Account("waves private node seed with waves tokens", node);
             return node;
         } catch (URISyntaxException e) {
             throw new NodeError(e);
         }
     }
 
-    public static Node runDockerNode(Version version) {
+    public static Node runDockerNode(String version) {
         try {
+            String tag = version == null ? "latest" : version;
+            String image = "wavesplatform/waves-private-node:" + tag;
+
             Node node = new Node();
-            String tag = version == Version.MAINNET ? "latest" : "testnet"; //TODO latest or specific version
 
             node.docker = new DefaultDockerClient("unix:///var/run/docker.sock");
-            node.docker.pull("wavesplatform/waves-private-node:" + tag);
+            if (node.docker.listImages(DockerClient.ListImagesParam.byName(image)).size() < 1)
+                node.docker.pull(image);
 
             String[] ports = {"6860", "6869"};
             Map<String, List<PortBinding>> portBindings = new HashMap<>();
@@ -66,7 +70,8 @@ public class Node {
 
             ContainerConfig containerConfig = ContainerConfig.builder()
                     .hostConfig(hostConfig)
-                    .image("wavesplatform/waves-private-node:" + tag).exposedPorts(ports)
+                    .image(image)
+                    .exposedPorts(ports)
                     .build();
 
             ContainerCreation container = node.docker.createContainer(containerConfig);
@@ -102,7 +107,7 @@ public class Node {
     }
 
     public static Node runDockerNode() {
-        return runDockerNode(Version.MAINNET);
+        return runDockerNode(null);
     }
 
     public void stopDockerNode() {

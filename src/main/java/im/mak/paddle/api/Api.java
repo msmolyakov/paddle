@@ -2,6 +2,7 @@ package im.mak.paddle.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import im.mak.paddle.api.deser.AssetDetails;
+import im.mak.paddle.api.deser.transactions.IssueTx;
 import im.mak.paddle.api.deser.ScriptInfo;
 import im.mak.paddle.api.deser.StateChangesInfo;
 import im.mak.paddle.api.exceptions.ApiError;
@@ -16,6 +17,7 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.net.URI;
+import java.util.List;
 import java.util.Objects;
 
 import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
@@ -58,6 +60,28 @@ public class Api {
         }
     }
 
+    public List<IssueTx> nft(String address, int limit, String after) {
+        try {
+            Response<List<IssueTx>> r = nodeApi.nft(address, limit, after).execute();
+            if (!r.isSuccessful()) throw parseError(r);
+            return r.body();
+        } catch (IOException e) {
+            throw new NodeError(e);
+        }
+    }
+
+    public List<IssueTx> nft(String address, int limit) {
+        return nft(address, limit, null);
+    }
+
+    public List<IssueTx> nft(String address, String after) {
+        return nft(address, 10000, after);
+    }
+
+    public List<IssueTx> nft(String address) {
+        return nft(address, null);
+    }
+
     public StateChanges stateChanges(String txId) {
         try {
             Response<StateChangesInfo> r = nodeApi.stateChanges(txId).execute();
@@ -74,7 +98,7 @@ public class Api {
         try {
             return converter.convert(Objects.requireNonNull(response.errorBody()));
         } catch (IOException e) {
-            throw new NodeError("can't parse response body");
+            throw new NodeError(e);
         }
     }
 

@@ -31,7 +31,6 @@ import im.mak.paddle.Account;
 import im.mak.paddle.Node;
 import org.junit.jupiter.api.*;
 
-import static im.mak.paddle.Node.runDockerNode;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -43,12 +42,16 @@ class FirstTest {
     
     @BeforeAll
     void before() {
-        node = runDockerNode();
+        node = Node.runDockerNode();
 
         alice = new Account(node, 10_00000000L);
         bob = new Account(node);
         
-        assetId = alice.issues(a -> a.name("My Asset").quantity(42).script("2 * 2 == 4")).getId().toString();
+        assetId = alice.issues(a -> a
+                .name("My Asset")
+                .quantity(42)
+                .script("2 * 2 == 4")
+        ).getId().toString();
     }
     
     @AfterAll
