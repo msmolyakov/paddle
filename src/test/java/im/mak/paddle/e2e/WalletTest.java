@@ -5,6 +5,7 @@ import im.mak.paddle.Account;
 import im.mak.paddle.Node;
 import org.junit.jupiter.api.*;
 
+import static im.mak.paddle.Async.async;
 import static im.mak.paddle.Node.runDockerNode;
 import static im.mak.paddle.actions.invoke.Arg.arg;
 import static im.mak.paddle.util.PathUtil.path;
@@ -22,11 +23,14 @@ class WalletTest {
     void before() {
         node = runDockerNode();
 
-        alice = new Account(node, 1_00000000L);
-        bob = new Account(node, 1_00000000L);
-        carol = new Account(node, 1_00000000L);
-
-        alice.setsScript(s -> s.script(path("wallet.ride")));
+        async(
+                () -> {
+                    alice = new Account(node, 1_00000000L);
+                    alice.setsScript(s -> s.script(path("wallet.ride")));
+                },
+                () -> bob = new Account(node, 1_00000000L),
+                () -> carol = new Account(node, 1_00000000L)
+        );
     }
 
     @AfterAll
