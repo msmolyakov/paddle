@@ -1,6 +1,7 @@
 package im.mak.paddle.actions;
 
 import im.mak.paddle.Account;
+import im.mak.paddle.actions.mass.Recipient;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -13,7 +14,7 @@ public class MassTransfer implements Action {
 
     public Account sender;
     public String assetId;
-    public List<Transfer> transfers;
+    public List<Recipient> transfers;
     public String attachment;
     public long fee;
 
@@ -34,7 +35,7 @@ public class MassTransfer implements Action {
         return this;
     }
 
-    public MassTransfer recipients(Transfer... transfers) {
+    public MassTransfer recipients(Recipient... transfers) {
         this.transfers = new LinkedList<>(Arrays.asList(transfers));
         return this;
     }
@@ -57,7 +58,7 @@ public class MassTransfer implements Action {
             long totalFee = MIN_FEE;
             totalFee += sender.isSmart() ? EXTRA_FEE : 0;
             totalFee += sender.node.isSmart(assetId) ? EXTRA_FEE : 0;
-            totalFee += (transfers.size() + 1) / 2;
+            totalFee += ((transfers.size() + 1) / 2) * MIN_FEE;
             return totalFee;
         }
     }
