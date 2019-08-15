@@ -24,23 +24,22 @@ In your project add into `pom.xml`:
 
 ### First test with Paddle
 
-If you created project from the Maven archetype or use JUnit, add new Java class:
+If you created project from the [paddle-example](https://github.com/msmolyakov/paddle-example) boilerplate or you use JUnit in existed project (for TestNG it's almost the same), add new Java class in `test` directory:
 
 ```java
 import im.mak.paddle.Account;
 import im.mak.paddle.Node;
 import org.junit.jupiter.api.*;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class FirstTest {
 
     private Node node;
     private Account alice, bob;
     private String assetId;
     
-    @BeforeAll
+    @BeforeEach
     void before() {
         node = Node.runDockerNode();
 
@@ -49,27 +48,31 @@ class FirstTest {
         
         assetId = alice.issues(a -> a
                 .name("My Asset")
-                .quantity(42)
+                .quantity(100)
                 .script("2 * 2 == 4")
         ).getId().toString();
     }
     
-    @AfterAll
-    void after() {
-        node.stopDockerNode();
-    }
-    
     @Test
     void canSendSmartAsset() {
-        alice.transfers(t -> t.to(bob).amount(42).asset(assetId));
+        alice.transfers(t -> t
+                .to(bob)
+                .amount(42)
+                .asset(assetId)
+        );
         
-        assertThat(bob.balance(assetId)).isEqualTo(42);
+        assertEquals(42, bob.balance(assetId));
+    }
+    
+    @AfterEach
+    void after() {
+        node.stopDockerNode();
     }
 }
 ```
 
 ### What next?
 
-See tests in [e2e](https://github.com/msmolyakov/paddle/tree/master/src/test/java/im/mak/paddle/e2e) package in the repository for examples how the Paddle can be used.
+See [tests](https://github.com/msmolyakov/paddle/tree/master/src/test/java/im/mak/paddle) in the repository for examples how the Paddle can be used.
 
-[paddle-example](https://github.com/msmolyakov/paddle-example) - project boilerplate with example of dApp and tests with Paddle.
+[paddle-example](https://github.com/msmolyakov/paddle-example) - project boilerplate with example of Waves dApp and tests with Paddle.
