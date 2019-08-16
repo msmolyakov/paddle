@@ -23,6 +23,9 @@ public class Node {
 
     public Api api;
 
+    public int blockWaitingInSeconds;
+    public int transactionWaitingInSeconds;
+
     public Node(String uri, char chainId, String richSeed) {
         try {
             this.wavesNode = new com.wavesplatform.wavesj.Node(uri, chainId);
@@ -30,6 +33,9 @@ public class Node {
             this.api = new Api(this.wavesNode.getUri());
 
             this.rich = new Account(richSeed, this);
+
+            this.blockWaitingInSeconds = 180;
+            this.transactionWaitingInSeconds = 60;
         } catch (URISyntaxException e) {
             throw new NodeError(e);
         }
@@ -253,13 +259,14 @@ public class Node {
     }
 
     public Transaction waitForTransaction(String id, int durationInSeconds) {
-        int pollingInterval = 1;
-        for (int timeSpent = 0; timeSpent < durationInSeconds; timeSpent += pollingInterval) {
+        int pollingIntervalInMillis = 100;
+
+        for (long spentMillis = 0; spentMillis < durationInSeconds * 1000L; spentMillis += pollingIntervalInMillis) {
             try {
                 return wavesNode.getTransaction(id);
             } catch (IOException e) {
                 try {
-                    Thread.sleep(pollingInterval * 1000L);
+                    Thread.sleep(pollingIntervalInMillis);
                 } catch (InterruptedException ignored) {}
             }
         }
@@ -267,38 +274,44 @@ public class Node {
     }
 
     public Transaction waitForTransaction(String id) {
-        return waitForTransaction(id, 10);
+        return waitForTransaction(id, this.transactionWaitingInSeconds);
     }
 
-    public int waitForHeight(int target, int durationInSeconds) {
-        int current = 0;
-        int pollingInterval = 1;
-        for (int timeSpent = 0; timeSpent < durationInSeconds; timeSpent += pollingInterval) {
+    public int waitForHeight(int target, int blockWaitingInSeconds) {
+        int start = height();
+        int prev = start;
+        int pollingIntervalInMillis = 100;
+
+        for (long spentMillis = 0; spentMillis < blockWaitingInSeconds * 1000L; spentMillis += pollingIntervalInMillis) {
             try {
-                current = height();
+                int current = height();
+
                 if (current >= target)
                     return current;
+                else if (current > prev) {
+                    prev = current;
+                    spentMillis = 0;
+                }
             } catch (NodeError ignored) {}
 
-            if (timeSpent + pollingInterval < durationInSeconds)
-                try {
-                    Thread.sleep(pollingInterval * 1000L);
-                } catch (InterruptedException ignored) {}
+            try {
+                Thread.sleep(pollingIntervalInMillis);
+            } catch (InterruptedException ignored) {}
         }
-        throw new NodeError("Could not wait for height " + target + " in " + durationInSeconds +
-                " seconds. Current height: " + current);
+        throw new NodeError("Could not wait for the height to rise from " + start + " to " + target +
+                ": height " + prev + " did not grow for " + blockWaitingInSeconds + " seconds");
     }
 
     public int waitForHeight(int expectedHeight) {
-        return waitForHeight(expectedHeight, 60);
+        return waitForHeight(expectedHeight, this.blockWaitingInSeconds);
     }
 
-    public int waitNBlocks(int blocksCount, int durationInSeconds) {
-        return waitForHeight(height() + blocksCount, durationInSeconds);
+    public int waitNBlocks(int blocksCount, int blockWaitingInSeconds) {
+        return waitForHeight(height() + blocksCount, blockWaitingInSeconds);
     }
 
     public int waitNBlocks(int blocksCount) {
-        return waitNBlocks(blocksCount, 60);
+        return waitNBlocks(blocksCount, this.blockWaitingInSeconds);
     }
 
 }

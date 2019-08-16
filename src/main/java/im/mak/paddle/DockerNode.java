@@ -17,8 +17,12 @@ public class DockerNode extends Node {
     private DockerClient docker;
     private String containerId;
 
-    public DockerNode(String image, String tag, int apiPort, char chainId, String richSeed) {
+    public DockerNode(String image, String tag, int apiPort, char chainId, String richSeed,
+                      int blockWaitingInSeconds, int transactionWaitingInSeconds) {
         super("http://127.0.0.1:" + apiPort, chainId, richSeed);
+        this.blockWaitingInSeconds = blockWaitingInSeconds;
+        this.transactionWaitingInSeconds = transactionWaitingInSeconds;
+
         try {
             String imageNameAndTag = image + ":" + tag;
 
@@ -64,6 +68,10 @@ public class DockerNode extends Node {
         } catch (DockerException | DockerCertificateException | InterruptedException e) {
             throw new NodeError(e);
         }
+    }
+
+    public DockerNode(String image, String tag, int apiPort, char chainId, String richSeed) {
+        this(image, tag, apiPort, chainId, richSeed, 30, 10);
     }
 
     public DockerNode() {

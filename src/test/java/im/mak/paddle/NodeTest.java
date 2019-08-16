@@ -41,7 +41,8 @@ class NodeTest {
             );
 
             assertThat(e).hasMessageStartingWith(
-                    "Could not wait for height " + (current + 100) + " in 1 seconds. Current height:");
+                    "Could not wait for the height to rise from " + current + " to " + (current + 100) +
+                            ": height " + current + " did not grow for 1 seconds");
         }
 
     }
@@ -67,7 +68,8 @@ class NodeTest {
             );
 
             assertThat(e).hasMessageStartingWith(
-                    "Could not wait for height " + (current + 100) + " in 1 seconds. Current height:");
+                    "Could not wait for the height to rise from " + current + " to " + (current + 100) +
+                            ": height " + current + " did not grow for 1 seconds");
         }
 
     }
