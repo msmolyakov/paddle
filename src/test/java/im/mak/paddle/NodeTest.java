@@ -37,7 +37,7 @@ class NodeTest {
             int current = node.height();
 
             NodeError e = assertThrows(NodeError.class, () ->
-                    node.waitForHeight(current + 100, 1_000)
+                    node.waitForHeight(current + 100, 1)
             );
 
             assertThat(e).hasMessageStartingWith(
@@ -63,7 +63,7 @@ class NodeTest {
             int current = node.height();
 
             NodeError e = assertThrows(NodeError.class, () ->
-                    node.waitNBlocks(100, 1_000)
+                    node.waitNBlocks(100, 1)
             );
 
             assertThat(e).hasMessageStartingWith(

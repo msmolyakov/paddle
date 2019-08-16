@@ -49,15 +49,14 @@ public class DockerNode extends Node {
 
             //wait node readiness
             boolean isNodeReady = false;
-            Thread.sleep(8000);
-            for (int repeat = 0; repeat < 6; repeat++) {
+            for (int repeat = 0; repeat < 60; repeat++) {
                 try {
                     this.version();
                     isNodeReady = true;
                     break;
                 } catch (NodeError e) {
                     try {
-                        Thread.sleep(2000);
+                        Thread.sleep(1000);
                     } catch (InterruptedException ignore) {}
                 }
             }
