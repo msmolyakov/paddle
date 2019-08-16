@@ -2,6 +2,7 @@ package im.mak.paddle;
 
 import com.spotify.docker.client.DefaultDockerClient;
 import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.ContainerCreation;
@@ -21,7 +22,7 @@ public class DockerNode extends Node {
         try {
             String imageNameAndTag = image + ":" + tag;
 
-            this.docker = new DefaultDockerClient("unix:///var/run/docker.sock");
+            this.docker = DefaultDockerClient.fromEnv().build();
             if (this.docker.listImages(DockerClient.ListImagesParam.byName(imageNameAndTag)).size() < 1)
                 this.docker.pull(imageNameAndTag);
 
@@ -61,7 +62,7 @@ public class DockerNode extends Node {
                 }
             }
             if (!isNodeReady) throw new NodeError("Could not wait for node readiness");
-        } catch (DockerException | InterruptedException e) {
+        } catch (DockerException | DockerCertificateException | InterruptedException e) {
             throw new NodeError(e);
         }
     }
