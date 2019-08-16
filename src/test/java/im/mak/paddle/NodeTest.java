@@ -3,22 +3,21 @@ package im.mak.paddle;
 import im.mak.paddle.exceptions.NodeError;
 import org.junit.jupiter.api.*;
 
-import static im.mak.paddle.Node.runDockerNode;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class NodeTest {
 
-    private Node node;
+    private DockerNode node;
 
     @BeforeAll
     void before() {
-        node = runDockerNode();
+        node = new DockerNode();
     }
 
     @AfterAll
     void after() {
-        node.stopDockerNode();
+        node.shutdown();
     }
 
     @Nested

@@ -2,11 +2,10 @@ package im.mak.paddle.e2e;
 
 import com.wavesplatform.wavesj.Transaction;
 import im.mak.paddle.Account;
-import im.mak.paddle.Node;
+import im.mak.paddle.DockerNode;
 import org.junit.jupiter.api.*;
 
 import static im.mak.paddle.Async.async;
-import static im.mak.paddle.Node.runDockerNode;
 import static im.mak.paddle.actions.invoke.Arg.arg;
 import static im.mak.paddle.util.PathUtil.path;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -15,12 +14,12 @@ import static org.junit.jupiter.api.MethodOrderer.Alphanumeric;
 
 class WalletTest {
 
-    private Node node;
+    private DockerNode node;
     private Account alice, bob, carol;
 
     @BeforeAll
     void before() {
-        node = runDockerNode();
+        node = new DockerNode();
 
         async(
                 () -> {
@@ -34,7 +33,7 @@ class WalletTest {
 
     @AfterAll
     void after() {
-        node.stopDockerNode();
+        node.shutdown();
     }
 
     @Nested

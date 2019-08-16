@@ -1,12 +1,5 @@
 package im.mak.paddle;
 
-import com.spotify.docker.client.DefaultDockerClient;
-import com.spotify.docker.client.DockerClient;
-import com.spotify.docker.client.exceptions.DockerException;
-import com.spotify.docker.client.messages.ContainerConfig;
-import com.spotify.docker.client.messages.ContainerCreation;
-import com.spotify.docker.client.messages.HostConfig;
-import com.spotify.docker.client.messages.PortBinding;
 import com.wavesplatform.wavesj.DataEntry;
 import com.wavesplatform.wavesj.Transaction;
 import com.wavesplatform.wavesj.matcher.Order;
@@ -25,102 +18,25 @@ import static im.mak.paddle.actions.exchange.OrderType.SELL;
 
 public class Node {
 
-    private DockerClient docker;
-    private String containerId = "";
     private com.wavesplatform.wavesj.Node wavesNode;
     public Account rich;
 
     public Api api;
 
     //TODO separate with docker node
-    public static Node connectToNode(String uri, char chainId) {
+    public Node(String uri, char chainId, String richSeed) {
         try {
-            Node node = new Node();
-            node.wavesNode = new com.wavesplatform.wavesj.Node(uri, chainId);
+            this.wavesNode = new com.wavesplatform.wavesj.Node(uri, chainId);
 
-            node.api = new Api(node.wavesNode.getUri());
+            this.api = new Api(this.wavesNode.getUri());
 
-            node.rich = new Account("waves private node seed with waves tokens", node);
-            return node;
+            this.rich = new Account(richSeed, this);
         } catch (URISyntaxException e) {
             throw new NodeError(e);
         }
     }
 
-    public static Node runDockerNode(String version) {
-        try {
-            String tag = version == null ? "latest" : version;
-            String image = "wavesplatform/waves-private-node:" + tag;
-
-            Node node = new Node();
-
-            node.docker = new DefaultDockerClient("unix:///var/run/docker.sock");
-            if (node.docker.listImages(DockerClient.ListImagesParam.byName(image)).size() < 1)
-                node.docker.pull(image);
-
-            String[] ports = {"6860", "6869"};
-            Map<String, List<PortBinding>> portBindings = new HashMap<>();
-            for (String port : ports) { // TODO randomly allocated?
-                List<PortBinding> hostPorts = new ArrayList<>();
-                hostPorts.add(PortBinding.of("0.0.0.0", port));
-                portBindings.put(port, hostPorts);
-            }
-
-            HostConfig hostConfig = HostConfig.builder().portBindings(portBindings).build();
-
-            ContainerConfig containerConfig = ContainerConfig.builder()
-                    .hostConfig(hostConfig)
-                    .image(image)
-                    .exposedPorts(ports)
-                    .build();
-
-            ContainerCreation container = node.docker.createContainer(containerConfig);
-            node.containerId = container.id();
-
-            node.docker.startContainer(node.containerId);
-
-            node.wavesNode = new com.wavesplatform.wavesj.Node("http://127.0.0.1:6869", 'R');
-            node.api = new Api(node.wavesNode.getUri());
-
-            node.rich = new Account("waves private node seed with waves tokens", node);
-
-            //wait node readiness
-            boolean isNodeReady = false;
-            Thread.sleep(8000);
-            for (int repeat = 0; repeat < 6; repeat++) {
-                try {
-                    node.version();
-                    isNodeReady = true;
-                    break;
-                } catch (NodeError e) {
-                    try {
-                        Thread.sleep(2000);
-                    } catch (InterruptedException ignore) {}
-                }
-            }
-            if (!isNodeReady) throw new NodeError("Could not wait for node readiness");
-
-            return node;
-        } catch (URISyntaxException | DockerException | InterruptedException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public static Node runDockerNode() {
-        return runDockerNode(null);
-    }
-
-    public void stopDockerNode() {
-        try {
-            docker.killContainer(containerId);
-            docker.removeContainer(containerId);
-            docker.close();
-        } catch (DockerException | InterruptedException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    private String version() {
+    public String version() {
         try {
             return wavesNode.getVersion();
         } catch (IOException e) {

@@ -1,6 +1,7 @@
 package im.mak.paddle.e2e;
 
 import im.mak.paddle.Account;
+import im.mak.paddle.DockerNode;
 import im.mak.paddle.Node;
 import im.mak.paddle.api.exceptions.ApiError;
 import im.mak.paddle.exceptions.NodeError;
@@ -8,21 +9,19 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static im.mak.paddle.Node.connectToNode;
-import static im.mak.paddle.Node.runDockerNode;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ApiErrorTest {
 
-    private Node node;
+    private DockerNode node;
     private Account alice;
     private String assetId;
 
     @BeforeAll
     void before() {
-        node = runDockerNode();
+        node = new DockerNode();
 
         alice = new Account(node, 10_00000000L);
 
@@ -31,7 +30,7 @@ class ApiErrorTest {
 
     @AfterAll
     void after() {
-        node.stopDockerNode();
+        node.shutdown();
     }
 
     @Test
@@ -52,7 +51,7 @@ class ApiErrorTest {
 
     @Test
     void c() {
-        Node unexistedNode = connectToNode("http://localhost:9999/", 'U');
+        Node unexistedNode = new Node("http://localhost:9999/", 'U', "some seed");
 
         NodeError e = assertThrows(NodeError.class, () ->
                 unexistedNode.api.assetDetails(assetId)

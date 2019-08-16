@@ -28,20 +28,20 @@ If you created project from the [paddle-example](https://github.com/msmolyakov/p
 
 ```java
 import im.mak.paddle.Account;
-import im.mak.paddle.Node;
+import im.mak.paddle.DockerNode;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class FirstTest {
 
-    private Node node;
+    private DockerNode node;
     private Account alice, bob;
     private String assetId;
     
     @BeforeEach
     void before() {
-        node = Node.runDockerNode();
+        node = new DockerNode();
 
         alice = new Account(node, 10_00000000L);
         bob = new Account(node);
@@ -66,7 +66,7 @@ class FirstTest {
     
     @AfterEach
     void after() {
-        node.stopDockerNode();
+        node.shutdown();
     }
 }
 ```

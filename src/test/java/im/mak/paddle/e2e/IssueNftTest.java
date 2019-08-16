@@ -1,24 +1,23 @@
 package im.mak.paddle.e2e;
 
 import im.mak.paddle.Account;
-import im.mak.paddle.Node;
+import im.mak.paddle.DockerNode;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static im.mak.paddle.Constants.MIN_FEE;
-import static im.mak.paddle.Node.runDockerNode;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 class IssueNftTest {
 
-    private Node node;
+    private DockerNode node;
     private Account alice, bob;
 
     @BeforeAll
     void before() {
-        node = runDockerNode();
+        node = new DockerNode();
 
         alice = new Account(node, 10_00000000L);
         bob = new Account(node);
@@ -26,7 +25,7 @@ class IssueNftTest {
 
     @AfterAll
     void after() {
-        node.stopDockerNode();
+        node.shutdown();
     }
 
     @Test
