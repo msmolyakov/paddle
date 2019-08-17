@@ -247,7 +247,7 @@ alice.invokes(...);
 // and etc...
 ```
 
-Sending a transaction, you can specify only the fields important for your scenario - all other fields will be set by default or calculated automatically.\
+Sending a transaction, you can specify only the fields important for your scenario - in most cases all other fields will be set by default or calculated automatically.\
 For example, you don't have to specify asset name and description for Issue transaction:
 
 ```java
@@ -255,7 +255,7 @@ alice.issues(a -> a.quantity(1000).decimals(0));
 // only the number of tokens and decimals are indicated here
 ```
 
-Also, in most cases, _transaction fee will be calculated automatically_ too. Exceptions at now: sponsored fee in tokens and InvokeScript transactions with smart assets in ScriptTransfers of dApp contract.
+Also, _transaction fee will be calculated automatically_ too! Exceptions at now: sponsored fee in tokens and InvokeScript transactions with smart assets in ScriptTransfers of dApp contract.
 
 You don't need sign transactions explicitly - Paddle does it automatically.\
 You don't need wait when transactions will be added to blockchain - Paddle does it automatically.
@@ -280,19 +280,43 @@ In both cases Paddle will compile your script automatically.
 
 ## Assertions
 
-### actions return transaction info
+### Transaction
 
-### state changes for InvokeScript transactions
+Each account action returns an instance of the resulting transaction from blockchain.
 
-### transactions rejection
+```java
+String assetId = alice.issues(a -> a.quantity(1000)).getId().toString();
 
-If you expect that some transaction will return error and will not be in blockchain, you can add assertion with your test framework and catch the NodeError exception.\
-For example, how it can look with JUnit 5:\
+assertEquals(1000, alice.balance(assetId));
+```
+
+### State changes of InvokeScript transaction
+
+If connected node stores state changes of InvokeScript transactions (depends of the node config), you can check it:
+
+```java
+String txId = bob.invokes(i -> i.dApp(alice)).getId().toString();
+
+StateChanges changes = node.api.stateChanges(txId);
+
+assertAll(
+    () -> assertEquals(1, changes.data.size()),
+    () -> assertEquals(bob.address(), changes.data.get(0).key),
+    () -> assertEquals(100500, changes.data.get(0).asInteger())
+);
+```
+
+### Transactions rejection
+
+If you expect that some transaction will return error and will not be in blockchain, you can check by catching the NodeError exception.
+
+For example, how it can look with JUnit 5:
 
 ```java
 NodeError error = assertThrows(NodeError.class, () ->
         bob.invokes(i -> i.dApp(alice).function("deposit").payment(500, assetId))
 );
+
 assertTrue(error.getMessage().contains("can accept payment in waves tokens only!"));
 ```
 
