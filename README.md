@@ -56,12 +56,14 @@ public class Main {
 
         // Create two accounts
         Account alice = new Account(node, 10_00000000); // account with 10 Waves
-        Account bob = new Account(node);                // account with no waves
+        Account bob = new Account(node);                // account with no Waves
 
-        // Send 3 Waves to Bob and wait ubtil the Transfer transaction appears in blockchain
+        // Send 3 Waves to Bob and wait until the Transfer transaction appears in blockchain
         alice.transfers(t -> t.to(bob).amount(3_00000000));
 
         System.out.println( bob.balance() ); // 300000000
+        
+        node.shutdown();
     }
 
 }
@@ -122,35 +124,35 @@ In general, any test consists of the following steps:
 1. run or connect to node;
 2. create test accounts;
 3. send some transactions;
-4. assert specific conditions;
-5. shutdown docker node, if used in step 1.
+4. perform assertions;
+5. shutdown docker node, if it's been used in step 1.
 
 ## Test environment
 
 Paddle needs some Waves node to execute test scenarios.
-It can run automatically node in Docker or connect to any other already running node.
+It can run node in Docker automatically or connect to any other already running node.
 
-### Docker
+### Run node in docker
 
 #### Default official image
 
 By default, Paddle proposes to run tests locally in automatically configured environment.
 
-How to run node before test:
+To run docker node:
 
 ```java
 DockerNode node = new DockerNode();
 ```
 
-That's it! It uses [the official Docker image of Waves node](https://hub.docker.com/r/wavesplatform/waves-private-node) with clean blockchain and most frequent blocks generation. It allows to run your tests faster than in the Testnet or Mainnet.
+That's it! It uses [the official image of private Waves node](https://hub.docker.com/r/wavesplatform/waves-private-node) with clean blockchain and most frequent blocks generation. It allows to run your tests faster than in the Testnet or Mainnet.
 
-If you didn't have the docker image, Paddle will do it automatically for you!
+If you don't have the docker image, Paddle will download it automatically!
 
-At start, all Waves tokens are distributed to the special single miner account named "rich". This account is available as `node.rich` field of node instance.
-
+At start, all Waves tokens are distributed to the special single miner account named "rich".\
+This account is available as `node.rich` field and it's used as a bank for initial balances of other test accounts.\
 When creating any account, Waves tokens for its initial balance are transferred from the rich account.
 
-Don't forget shutdown node after test run:
+**Note!** Don't forget shutdown node after test run:
 
 ```java
 node.shutdown();
@@ -158,37 +160,37 @@ node.shutdown();
 
 #### Custom Docker image
 
-If you wish to use any custom docker image with Waves node, Paddle can do it:
+If you wish to use some custom docker image of Waves node, Paddle allows to do it:
 
 ```java
 DockerNode node = new DockerNode(image, tag, apiPort, chainId, richSeedPhrase);
 ```
 
-At now, custom image must expose port `6869` for REST API.
+**Note!** For now custom image must expose port `6869` for REST API.
 
 ### Connect to existing Waves node
 
-Paddle also can connect to nodes of any Waves blockchain: mainnet, testnet or any custom.
+Paddle also can connect to running nodes of any Waves blockchain: mainnet, testnet or any custom.
 
-To connect to node, just provide node address, chainId and seed phrase of rich account:
+To connect to node just provide node address, chain Id and seed phrase of rich account:
 
 ```java
 Node node = new Node("testnodes.wavesnodes.com", 'T', "your rich seed phrase");
 ```
 
-Be aware in production networks like Mainnet! Your tests will spend your real money.
+**Note!** Be aware in production networks like Mainnet! Your tests will spend your real money.
 
 ### Methods of Node instance
 
-- `chainId()`
-- `height()`
-- `compileScript()`
-- `isSmart()` for accounts and assets
-- `send()`
+- `chainId()` - returns chain id;
+- `height()` - returns current height of blockchain;
+- `compileScript()` - compile RIDE script;
+- `isSmart(assetOrAddress)` - return true if asset or account is scripted;
+- `send(...)` - send transaction.
 
-## Account setup
+## Account
 
-In Paddle, Account is an actor of your test. It contains information about Waves account and can send transactions.
+In Paddle, Account is an actor of your test. It has information about Waves account and can send transactions.
 
 To create new account:
 
@@ -196,14 +198,17 @@ To create new account:
 Account alice = new Account(node, 10_00000000L);
 ```
 
-Definition of test account requires node instance, where it will send all transactions and other requests.\
-Optionally, you can specify seed phrase, otherwise it will be randomly generated.\
-Also optionally, you can set initial Waves balance, otherwise account will not have Waves tokens at start.\
-Technically, when you specify initial balance, node generates Transfer transaction from "rich" account to the created account.
+Definition of test account requires Node instance, where it will send all transactions and other requests.
 
-### Retrieving info about account
+Optionally, you can specify seed phrase, otherwise it will be randomly generated.
 
-Account can provide seed phrase, private and public keys, address. Account can check if it has a smart contract:
+Also optionally, you can set initial Waves balance, otherwise account will not have Waves tokens at start.
+
+Technically, when you specify initial balance, "rich" account sends Transfer transaction to the created account.
+
+### Retrieving information about account
+
+Account can provide seed phrase, private and public keys, address. Account can check if it's scripted:
 
 ```java
 alice.seed();
@@ -214,22 +219,22 @@ alice.address();
 alice.isSmart();
 ```
 
-Account can get Waves or asset balance and return data entries from its data storage:
+Account can get Waves or asset balance and read entries from its data storage:
 
 ```java
-alice.balance();
-alice.balance(assetId);
+alice.balance();        // balance in Waves
+alice.balance(assetId); // balance in some asset
 
-alice.data();
-alice.dataByKey(key);
+alice.data();           // collection of all entries in account data storage
+alice.dataByKey(key);   // entry of unknown type by specified key
 
-alice.dataBin(key);
-alice.dataBool(key);
-alice.dataInt(key);
-alice.dataStr(key);
+alice.dataBin(key);     // binary entry by specified key
+alice.dataBool(key);    // boolean entry by specified key
+alice.dataInt(key);     // integer entry by specified key
+alice.dataStr(key);     // string entry by specified key
 ```
 
-### Signing and sending transactions
+### Signing data and sending transactions
 
 Account can sign any bytes and send transactions:
 
