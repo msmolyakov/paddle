@@ -1,6 +1,7 @@
 package im.mak.paddle.api;
 
 import im.mak.paddle.api.deser.AssetDetails;
+import im.mak.paddle.api.deser.NodeVersion;
 import im.mak.paddle.api.deser.transactions.IssueTx;
 import im.mak.paddle.api.deser.ScriptInfo;
 import im.mak.paddle.api.deser.StateChangesInfo;
@@ -28,5 +29,8 @@ public interface NodeApi {
 
     @GET("debug/stateChanges/info/{id}")
     Call<StateChangesInfo> stateChanges(@Path("id") String id);
+
+    @GET("node/version")
+    Call<NodeVersion> version();
 
 }

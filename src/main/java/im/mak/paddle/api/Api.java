@@ -2,6 +2,7 @@ package im.mak.paddle.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import im.mak.paddle.api.deser.AssetDetails;
+import im.mak.paddle.api.deser.NodeVersion;
 import im.mak.paddle.api.deser.transactions.IssueTx;
 import im.mak.paddle.api.deser.ScriptInfo;
 import im.mak.paddle.api.deser.StateChangesInfo;
@@ -87,6 +88,16 @@ public class Api {
             Response<StateChangesInfo> r = nodeApi.stateChanges(txId).execute();
             if (!r.isSuccessful()) throw parseError(r);
             return Objects.requireNonNull(r.body()).stateChanges;
+        } catch (IOException e) {
+            throw new NodeError(e);
+        }
+    }
+
+    public String version() {
+        try {
+            Response<NodeVersion> r = nodeApi.version().execute();
+            if (!r.isSuccessful()) throw parseError(r);
+            return Objects.requireNonNull(r.body()).version;
         } catch (IOException e) {
             throw new NodeError(e);
         }

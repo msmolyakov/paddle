@@ -41,14 +41,6 @@ public class Node {
         }
     }
 
-    public String version() {
-        try {
-            return wavesNode.getVersion();
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
     public byte chainId() {
         return wavesNode.getChainId();
     }

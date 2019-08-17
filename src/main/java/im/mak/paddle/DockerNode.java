@@ -55,7 +55,7 @@ public class DockerNode extends Node {
             boolean isNodeReady = false;
             for (int repeat = 0; repeat < 60; repeat++) {
                 try {
-                    this.version();
+                    api.version();
                     isNodeReady = true;
                     break;
                 } catch (NodeError e) {
