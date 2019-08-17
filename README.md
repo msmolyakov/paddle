@@ -8,7 +8,7 @@ Paddle is a Java library to write tests for your dApps and other smart contracts
 
 ## Getting started
 
-### Prerequisites
+### Requirements
 
 - Java 8 or higher;
 - Docker 17.03.1 or newer if you want to use Waves Node in Docker. On Windows, install the latest "Docker for Windows".
@@ -69,7 +69,7 @@ public class Main {
 }
 ```
 
-### Example with JUnit
+### Example with JUnit 5
 
 ```java
 import im.mak.paddle.Account;
@@ -120,7 +120,7 @@ class FirstTest {
 
 Paddle is framework agnostic, i.e. Paddle could be used with JUnit, TestNG or any other test framework familiar to you.
 
-In general, any test consists of the following steps:
+But in general, any test consists of the following steps:
 1. run or connect to node;
 2. create test accounts;
 3. send some transactions;
@@ -182,11 +182,14 @@ Node node = new Node("testnodes.wavesnodes.com", 'T', "your rich seed phrase");
 
 ### Methods of Node instance
 
-- `chainId()` - returns chain id;
-- `height()` - returns current height of blockchain;
-- `compileScript()` - compile RIDE script;
-- `isSmart(assetOrAddress)` - return true if asset or account is scripted;
-- `send(...)` - send transaction.
+- `node.chainId()` - chain id of used blockchain;
+- `node.height()` - current height of blockchain;
+- `node.compileScript()` - compile RIDE script;
+- `node.isSmart(assetOrAddress)` - returns true if asset or account is scripted;
+- `node.send(...)` - send transaction;
+- `node.api.assetDetails(assetId)` - information about issued asset;
+- `node.api.nft(address)` - list of NFT for specified account;
+- `node.api.stateChanges(invokeTxId)` - result of specified InvokeScript transaction.
 
 ## Account
 
@@ -224,6 +227,7 @@ Account can get Waves or asset balance and read entries from its data storage:
 ```java
 alice.balance();        // balance in Waves
 alice.balance(assetId); // balance in some asset
+alice.nft();            // list of non-fungible tokens on this account
 
 alice.data();           // collection of all entries in account data storage
 alice.dataByKey(key);   // entry of unknown type by specified key
@@ -308,7 +312,7 @@ assertAll(
 
 ### Transactions rejection
 
-If you expect that some transaction will return error and will not be in blockchain, you can check by catching the NodeError exception.
+If you expect that some transaction will return error and will not be in blockchain, you can check it by catching the NodeError exception.
 
 For example, how it can look with JUnit 5:
 
@@ -324,7 +328,59 @@ assertTrue(error.getMessage().contains("can accept payment in waves tokens only!
 
 ### Waitings
 
+#### Height
+
+Paddle allows to wait for the growth of the height of N blocks
+```java
+node.waitNBlocks(2);
+```
+or until the height of the blockchain reaches the specified
+```java
+node.waitForHeight(100);
+```
+
+The both methods have "soft" timeouts. This means that they continue to wait until the height rises with the expected frequency. The expected frequency is value of `node.blockWaitingInSeconds` but can be redefined by optional argument:
+```java
+node.waitNBlocks(2, waitingInSeconds);
+node.waitForHeight(100, waitingInSeconds);
+```
+
+#### Transaction
+
+Also Paddle can wait until transaction with specified id is in blockchain:
+```java
+node.waitForTransaction(txId);
+```
+It has default timeout in `node.transactionWaitingInSeconds` and can be redefined by optional argument.
+
 ### Asynchronous actions
+
+To save execution time (or for other reasons in specific cases) it would be great to be able to perform some actions asynchronously.
+
+For example, we want create some test account and each of them will issue asset:
+```java
+Account alice = new Account(node, 1_00000000);
+Account bob = new Account(node, 1_00000000);
+Account carol = new Account(node, 1_00000000);
+alice.issues(a -> a.name("Asset 1"));
+bob.issues(a -> a.name("Asset 2"));
+carol.issues(a -> a.name("Asset 3"));
+```
+These 6 transactions will be sent consecutively. But with `Async.async()` their asynchronous execution will be three times faster:
+```java
+async(
+    () -> {
+        Account alice = new Account(node, 1_00000000);
+        alice.issues(a -> a.name("Asset 1"));
+    }, () -> {
+        Account bob = new Account(node, 1_00000000);
+        bob.issues(a -> a.name("Asset 2"));
+    }, () -> {
+        Account carol = new Account(node, 1_00000000);
+        carol.issues(a -> a.name("Asset 3"));
+    }
+);
+```
 
 ## What next?
 
