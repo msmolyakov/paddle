@@ -15,7 +15,7 @@ import java.util.function.Consumer;
 public class Account {
 
     public PrivateKeyAccount wavesAccount;
-    public final String seedText;
+    private String seedText;
     public Node node;
 
     public Account(String seedText, Node worksWith, long initWavesBalance) {
@@ -38,6 +38,10 @@ public class Account {
 
     public Account(Node worksWith) {
         this(worksWith, 0);
+    }
+
+    public String seed() {
+        return this.seedText;
     }
 
     public byte[] privateKey() {
