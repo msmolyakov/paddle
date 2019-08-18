@@ -6,4 +6,6 @@ public class ScriptTransfer {
     public long amount;
     public String asset; //TODO may be null. Why not "assetId"?
 
+    //TODO constructor and static initializer
+
 }
