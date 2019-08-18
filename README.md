@@ -279,7 +279,7 @@ For example, you don't have to specify asset name and description for Issue tran
 
 ```java
 alice.issues(a -> a.quantity(1000).decimals(0));
-// only the number of tokens and decimals are indicated here
+// only the number of tokens and decimals are specified here
 ```
 
 Also, _transaction fee will be calculated automatically_ too! Exceptions at now: sponsored fee in tokens and InvokeScript transactions with smart assets in ScriptTransfers of dApp contract.
@@ -292,8 +292,8 @@ You don't need wait when transactions will be added to blockchain - Paddle does 
 To create dApp or smart asset, you can provide script source from file:
 
 ```java
-alice.setsScript(s -> s.script(file("wallet.ride")));
-alice.issues(a -> a.script(file("fixed-price.ride")));
+alice.setsScript(s -> s.script(Script.fromFile("wallet.ride")));
+alice.issues(a -> a.script(Script.fromFile("fixed-price.ride")));
 ```
 
 Or set script code directly as string:

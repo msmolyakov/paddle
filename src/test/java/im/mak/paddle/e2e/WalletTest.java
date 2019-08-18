@@ -7,7 +7,7 @@ import org.junit.jupiter.api.*;
 
 import static im.mak.paddle.Async.async;
 import static im.mak.paddle.actions.invoke.Arg.arg;
-import static im.mak.paddle.util.PathUtil.path;
+import static im.mak.paddle.util.ScriptUtil.fromFile;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.MethodOrderer.Alphanumeric;
@@ -24,7 +24,7 @@ class WalletTest {
         async(
                 () -> {
                     alice = new Account(node, 1_00000000L);
-                    alice.setsScript(s -> s.script(path("wallet.ride")));
+                    alice.setsScript(s -> s.script(fromFile("wallet.ride")));
                 },
                 () -> bob = new Account(node, 1_00000000L),
                 () -> carol = new Account(node, 1_00000000L)
