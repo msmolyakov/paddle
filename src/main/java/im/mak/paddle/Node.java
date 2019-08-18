@@ -250,10 +250,13 @@ public class Node {
         }
     }
 
-    public Transaction waitForTransaction(String id, int durationInSeconds) {
+    public Transaction waitForTransaction(String id, int waitingInSeconds) {
         int pollingIntervalInMillis = 100;
 
-        for (long spentMillis = 0; spentMillis < durationInSeconds * 1000L; spentMillis += pollingIntervalInMillis) {
+        if (waitingInSeconds < 1)
+            throw new NodeError("waitForTransaction: waiting value must be positive. Current: " + waitingInSeconds);
+
+        for (long spentMillis = 0; spentMillis < waitingInSeconds * 1000L; spentMillis += pollingIntervalInMillis) {
             try {
                 return wavesNode.getTransaction(id);
             } catch (IOException e) {
@@ -262,7 +265,7 @@ public class Node {
                 } catch (InterruptedException ignored) {}
             }
         }
-        throw new NodeError("Could not wait for transaction " + id + " in " + durationInSeconds + " seconds");
+        throw new NodeError("Could not wait for transaction " + id + " in " + waitingInSeconds + " seconds");
     }
 
     public Transaction waitForTransaction(String id) {
@@ -273,6 +276,9 @@ public class Node {
         int start = height();
         int prev = start;
         int pollingIntervalInMillis = 100;
+
+        if (blockWaitingInSeconds < 1)
+            throw new NodeError("waitForHeight: waiting value must be positive. Current: " + blockWaitingInSeconds);
 
         for (long spentMillis = 0; spentMillis < blockWaitingInSeconds * 1000L; spentMillis += pollingIntervalInMillis) {
             try {
@@ -299,6 +305,8 @@ public class Node {
     }
 
     public int waitNBlocks(int blocksCount, int blockWaitingInSeconds) {
+        if (blockWaitingInSeconds < 1)
+            throw new NodeError("waitNBlocks: waiting value must be positive. Current: " + blockWaitingInSeconds);
         return waitForHeight(height() + blocksCount, blockWaitingInSeconds);
     }
 

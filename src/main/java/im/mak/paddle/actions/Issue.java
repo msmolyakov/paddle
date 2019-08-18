@@ -27,6 +27,7 @@ public class Issue implements Action {
 
         this.name = "Asset " + new Random().nextInt(10000);
         this.description = "";
+        this.quantity = 10000000000000000L;
         this.decimals = 8;
         this.isReissuable = true;
         this.fee = 0;

@@ -30,7 +30,7 @@ public class Exchange implements Action {
         return new Exchange(from);
     }
 
-    public Exchange buy(Order buy) { //TODO how to put like action(from)?
+    public Exchange buy(Order buy) { //TODO put like action(from)
         this.buy = buy;
         return this;
     }

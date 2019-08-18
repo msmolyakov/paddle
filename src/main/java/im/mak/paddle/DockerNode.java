@@ -30,20 +30,17 @@ public class DockerNode extends Node {
             if (this.docker.listImages(DockerClient.ListImagesParam.byName(imageNameAndTag)).size() < 1)
                 this.docker.pull(imageNameAndTag);
 
-            String[] ports = {"6860", String.valueOf(apiPort)}; //TODO remove 6860 - not used
             Map<String, List<PortBinding>> portBindings = new HashMap<>();
-            for (String port : ports) { // TODO randomly allocated?
-                List<PortBinding> hostPorts = new ArrayList<>();
-                hostPorts.add(PortBinding.of("0.0.0.0", port));
-                portBindings.put(port, hostPorts);
-            }
+            List<PortBinding> hostPorts = new ArrayList<>();
+            hostPorts.add(PortBinding.of("0.0.0.0", apiPort));
+            portBindings.put(String.valueOf(apiPort), hostPorts);
 
             HostConfig hostConfig = HostConfig.builder().portBindings(portBindings).build();
 
             ContainerConfig containerConfig = ContainerConfig.builder()
                     .hostConfig(hostConfig)
                     .image(imageNameAndTag)
-                    .exposedPorts(ports)
+                    .exposedPorts("6869")
                     .build();
 
             ContainerCreation container = this.docker.createContainer(containerConfig);
@@ -71,12 +68,12 @@ public class DockerNode extends Node {
     }
 
     public DockerNode(String image, String tag, int apiPort, char chainId, String richSeed) {
-        this(image, tag, apiPort, chainId, richSeed, 30, 10);
+        this(image, tag, apiPort, chainId, richSeed, 180, 60);
     }
 
     public DockerNode() {
         this("wavesplatform/waves-private-node", "latest", 6869, 'R',
-                "waves private node seed with waves tokens");
+                "waves private node seed with waves tokens", 30, 10);
     }
 
     public void shutdown() {
