@@ -93,6 +93,8 @@ public class Api {
         }
     }
 
+    //TODO stateChanges(String address)
+
     public String version() {
         try {
             Response<NodeVersion> r = nodeApi.version().execute();

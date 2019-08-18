@@ -68,8 +68,8 @@ public class Order {
             return matcherFee;
         else {
             long fee = MIN_FEE * 3;
-            //extra fee isn't required for sender script
-            fee += matcher.isSmart() ? EXTRA_FEE : 0; //TODO check: does matcher require extra fee?
+            //note! Scripted sender does not require an extra fee
+            fee += matcher.isSmart() ? EXTRA_FEE : 0;
             fee += sender.node.isSmart(pair.getAmountAsset()) ? EXTRA_FEE : 0;
             fee += sender.node.isSmart(pair.getPriceAsset()) ? EXTRA_FEE : 0;
             return fee;

@@ -5,7 +5,8 @@ import im.mak.paddle.Account;
 import static im.mak.paddle.Constants.EXTRA_FEE;
 import static im.mak.paddle.Constants.ONE_WAVES;
 
-//TODO отмена спонсорства
+//TODO cancel sponsorship
+
 public class SponsorFee implements Action {
 
     public Account sender;
