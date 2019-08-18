@@ -2,9 +2,32 @@
 
 [![Maven Central](https://img.shields.io/maven-central/v/im.mak/paddle.svg?label=Maven%20Central)](https://search.maven.org/artifact/im.mak/paddle)
 
-## What is Paddle?
-
 Paddle is a Java library to write tests for your dApps and other smart contracts on Waves blockchain.
+
+## Table of Contents
+
+- [Getting started](#getting-started)
+  - [Requirements](#requirements)
+  - [Installation](#installation)
+  - [Simple usage](#simple-usage)
+  - [Example with JUnit 5](#example-with-junit-5)
+- [Test lifecycle](#test-lifecycle)
+- [Test environment](#test-environment)
+  - [Run node in Docker](#run-node-in-docker)
+  - [Connect to existing Waves node](#connect-to-existing-waves-node)
+  - [Methods of Node instance](#methods-of-node-instance)
+- [Account](#account)
+  - [Retrieving information about account](#retrieving-information-about-account)
+  - [Signing data and sending transactions](#signing-data-and-sending-transactions)
+  - [Creating dApp and smart account](#creating-dapp-and-smart-account)
+- [Assertions](#assertions)
+  - [Transaction](#transaction)
+  - [State changes of InvokeScript transaction](#state-changes-of-invokescript-transaction)
+  - [Transactions rejection](#transactions-rejection)
+- [Other features](#other-features)
+  - [Waitings](#waitings)
+  - [Asynchronous actions](#asynchronous-actions)
+- [What next?](#what-next)
 
 ## Getting started
 
@@ -132,7 +155,7 @@ But in general, any test consists of the following steps:
 Paddle needs some Waves node to execute test scenarios.
 It can run node in Docker automatically or connect to any other already running node.
 
-### Run node in docker
+### Run node in Docker
 
 #### Default official image
 
