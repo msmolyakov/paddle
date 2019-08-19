@@ -13,11 +13,11 @@ public class Entry {
     }
 
     public static BooleanEntry bool(String key, boolean value) {
-        return new BooleanEntry(key, false);
+        return new BooleanEntry(key, value);
     }
 
     public static LongEntry integer(String key, long value) {
-        return new LongEntry(key, 160L);
+        return new LongEntry(key, value);
     }
 
     public static StringEntry string(String key, String value) {
