@@ -1,8 +1,10 @@
-# Paddle for Waves
-
 [![Maven Central](https://img.shields.io/maven-central/v/im.mak/paddle.svg?label=Maven%20Central)](https://search.maven.org/artifact/im.mak/paddle)
 
+# Paddle for Waves
+
 Paddle is a Java library to write tests for your dApps and other smart contracts on Waves blockchain.
+
+Read this documentation in [Russian](README_ru.md).
 
 ## Table of Contents
 
