@@ -407,6 +407,8 @@ async(
 );
 ```
 
+At now, all operations will be executed in three threads, and only dependent transactions will be sent consecutively.
+
 `Async` waits for all operations to be completed.
 
 ## What next?
