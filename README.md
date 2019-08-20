@@ -173,7 +173,7 @@ That's it! It uses [the official image of private Waves node](https://hub.docker
 
 If you don't have the docker image, Paddle will download it automatically!
 
-At start, all Waves tokens are distributed to the special single miner account named "rich".\
+At start, all Waves tokens are distributed to the special account named "rich".\
 This account is available as `node.rich` field and it's used as a bank for initial balances of other test accounts.\
 When creating any account, Waves tokens for its initial balance are transferred from the rich account.
 
