@@ -407,6 +407,8 @@ async(
 );
 ```
 
+`Async` waits for all operations to be completed.
+
 ## What next?
 
 See [tests](https://github.com/msmolyakov/paddle/tree/master/src/test/java/im/mak/paddle) in the repository for examples how the Paddle can be used.
