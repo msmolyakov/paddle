@@ -6,7 +6,7 @@
 
     <groupId>im.mak</groupId>
     <artifactId>paddle</artifactId>
-    <version>0.2.1</version>
+    <version>0.3</version>
 
     <name>Paddle</name>
     <description>Paddle library helps developers to write tests for smart contracts on Waves blockchain</description>
