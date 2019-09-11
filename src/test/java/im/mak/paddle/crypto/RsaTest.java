@@ -1,8 +1,8 @@
-package im.mak.paddle.util;
+package im.mak.paddle.crypto;
 
 import im.mak.paddle.Account;
 import im.mak.paddle.DockerNode;
-import im.mak.paddle.util.crypto.Rsa;
+import im.mak.paddle.crypto.Rsa;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,14 +11,14 @@ import java.util.Collections;
 
 import static im.mak.paddle.Async.async;
 import static im.mak.paddle.util.ScriptUtil.fromFile;
-import static im.mak.paddle.util.crypto.HashAlg.*;
+import static im.mak.paddle.crypto.HashAlg.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 class RsaTest {
 
     private DockerNode node;
-    private Account alice , bob;
+    private Account alice, bob;
 
     private Rsa rsa;
     private byte[] source245b, source32kb;

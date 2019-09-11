@@ -1,0 +1,10 @@
+{-# STDLIB_VERSION 3 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+@Callable(inv)
+func checkMerkle(root: ByteVector, proof: ByteVector, value: ByteVector) = {
+    WriteSet([
+        DataEntry("result", checkMerkleProof(root, proof, value))
+    ])
+}

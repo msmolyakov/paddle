@@ -1,4 +1,4 @@
-package im.mak.paddle.util.crypto;
+package im.mak.paddle.crypto;
 
 public enum HashAlg {
 
