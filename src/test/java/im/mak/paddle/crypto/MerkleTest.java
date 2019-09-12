@@ -50,7 +50,7 @@ class MerkleTest {
     }
 
     @Test
-    void rsa() {
+    void merkle() {
         assertThat(source).hasSize(32767);
 
         bob.invokes(i -> i.dApp(alice)
