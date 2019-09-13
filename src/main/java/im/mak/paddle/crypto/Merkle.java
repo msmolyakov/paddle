@@ -65,11 +65,11 @@ public class Merkle {
                         .values());
 
         List<byte[]> nextNodes = nodePairs.stream().map(n ->
-                Bytes.concat(
+                fastHash(Bytes.concat(
                         new byte[]{(byte)(areNodes ? 1 : 0)}, //TODO флаг node наверно байт, а не массив
                         n.get(0),
                         n.size() == 2 ? n.get(1) : new byte[]{}
-                )
+                ))
         ).collect(toList());
 
         if (nextNodes.size() == 1)
@@ -92,7 +92,7 @@ public class Merkle {
     public Merkle(List<byte[]> leafs) {
         hashes = leafs.stream().map(this::leafHash).collect(toList());
         proofs = initProofs(hashes);
-        root = findRoot(hashes, false);
+        root = findRoot(hashes, true);
     }
 
     public byte[] rootHash() {
@@ -128,16 +128,16 @@ public class Merkle {
     //TODO remove leaf?
 
     public static void main(String[] args) {
-        List<byte[]> data = Stream.of("one", "two", "three", "four", "five")
+        List<byte[]> data = Stream.of("one"/*, "two", "three", "four", "five"*/)
                 .map(String::getBytes).collect(toList());
 
         Merkle tree = new Merkle(data);
 
         String proof0 = Base58.encode(tree.proofByLeafIndex(0).get());
-        String proof1 = Base58.encode(tree.proofByLeafIndex(1).get());
-        String proof2 = Base58.encode(tree.proofByLeafIndex(2).get());
-        String proof3 = Base58.encode(tree.proofByLeafIndex(3).get());
-        String proof4 = Base58.encode(tree.proofByLeafIndex(4).get());
+//        String proof1 = Base58.encode(tree.proofByLeafIndex(1).get());
+//        String proof2 = Base58.encode(tree.proofByLeafIndex(2).get());
+//        String proof3 = Base58.encode(tree.proofByLeafIndex(3).get());
+//        String proof4 = Base58.encode(tree.proofByLeafIndex(4).get());
 
         System.out.println();
     }

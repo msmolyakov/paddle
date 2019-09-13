@@ -5,6 +5,6 @@
 @Callable(inv)
 func checkMerkle(root: ByteVector, proof: ByteVector, value: ByteVector) = {
     WriteSet([
-        DataEntry("result", checkMerkleProof(root, proof, value))
+        DataEntry(inv.transactionId.toBase58String(), checkMerkleProof(root, proof, value))
     ])
 }
