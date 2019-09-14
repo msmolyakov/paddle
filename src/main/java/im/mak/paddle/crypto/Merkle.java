@@ -18,19 +18,25 @@ public class Merkle {
     private final List<byte[]> proofs;
     private final byte[] root;
 
+    private byte[] LEAF = new byte[]{0}, NODE = new byte[]{1};
+    private byte LEFT = 0, RIGHT = 1;
+    private byte[] EMPTY = new byte[]{LEFT, 0};
+
     private int sizeWithEmpty(List list) {
         return max((int) pow(2, ceil(log(list.size()) / log(2))), 2);
+    }
+
+    private byte[] proof(byte side, byte[] hash) {
+        return Bytes.concat(new byte[]{side, (byte) hash.length}, hash);
     }
 
     private List<byte[]> initProofs(List<byte[]> leafsHashes) {
         List<byte[]> result = new ArrayList<>();
         for (int i = 0; i < leafsHashes.size(); i += 2) {
             if (i + 1 < leafsHashes.size()) {
-                byte[] leftNode = leafsHashes.get(i);
-                byte[] rightNode = leafsHashes.get(i + 1);
-                result.add(Bytes.concat(new byte[]{0, (byte) rightNode.length}, rightNode));
-                result.add(Bytes.concat(new byte[]{1, (byte) leftNode.length}, leftNode));
-            } else result.add(new byte[]{0, 0});
+                result.add(proof(LEFT, leafsHashes.get(i + 1)));
+                result.add(proof(RIGHT, leafsHashes.get(i)));
+            } else result.add(EMPTY);
         }
         return result;
     }
@@ -44,10 +50,10 @@ public class Merkle {
                     int r = (n + 1) * ratio + p;
                     if (l < proofs.size()) {
                         byte[] rightNode = nodes.get(n + 1);
-                        proofs.set(l, Bytes.concat(proofs.get(l), new byte[]{0, (byte) rightNode.length}, rightNode));
+                        proofs.set(l, Bytes.concat(proofs.get(l), proof(LEFT, rightNode)));
                         if (r < proofs.size()) {
                             byte[] leftNode = nodes.get(n);
-                            proofs.set(r, Bytes.concat(proofs.get(r), new byte[]{1, (byte) leftNode.length}, leftNode));
+                            proofs.set(r, Bytes.concat(proofs.get(r), proof(RIGHT, leftNode)));
                         }
                     } else break;
                 }
@@ -55,7 +61,7 @@ public class Merkle {
                 for (int p = 0; p < ratio; p++) {
                     int l = n * ratio + p;
                     if (l < proofs.size())
-                        proofs.set(l, Bytes.concat(proofs.get(l), new byte[]{0, 0}));
+                        proofs.set(l, Bytes.concat(proofs.get(l), EMPTY));
                     else break;
                 }
             }
@@ -71,7 +77,7 @@ public class Merkle {
 
         List<byte[]> nextNodes = nodePairs.stream().map(n ->
                 fastHash(Bytes.concat(
-                        new byte[]{1},
+                        NODE,
                         n.get(0),
                         n.size() == 2 ? n.get(1) : new byte[]{}
                 ))
@@ -90,7 +96,7 @@ public class Merkle {
     }
 
     private byte[] leafHash(byte[] source) {
-        return fastHash(Bytes.concat(new byte[]{0}, source));
+        return fastHash(Bytes.concat(LEAF, source));
     }
 
     public Merkle(List<byte[]> leafs) {
