@@ -59,17 +59,46 @@ class MerkleTest {
         );
 
 
-        Merkle tree2 = new Merkle(Stream.of("one", "two", "three", "four", "five")
+        Merkle tree2 = new Merkle(Stream.of("one", "two", "three", "four", "five", "six", "seven", "eight", "nine")
                 .map(String::getBytes).collect(toList()));
         String txId2_0 = bob.invokes(i -> i.dApp(alice).function("checkMerkle",
-                arg(tree2.rootHash()), arg(tree2.proofByLeafIndex(3).get()), arg("four".getBytes())))
+                arg(tree2.rootHash()), arg(tree2.proofByLeafIndex(0).get()), arg("one".getBytes())))
                 .getId().toString();
         String txId2_1 = bob.invokes(i -> i.dApp(alice).function("checkMerkle",
+                arg(tree2.rootHash()), arg(tree2.proofByLeafIndex(1).get()), arg("two".getBytes())))
+                .getId().toString();
+        String txId2_2 = bob.invokes(i -> i.dApp(alice).function("checkMerkle",
+                arg(tree2.rootHash()), arg(tree2.proofByLeafIndex(2).get()), arg("three".getBytes())))
+                .getId().toString();
+        String txId2_3 = bob.invokes(i -> i.dApp(alice).function("checkMerkle",
+                arg(tree2.rootHash()), arg(tree2.proofByLeafIndex(3).get()), arg("four".getBytes())))
+                .getId().toString();
+        String txId2_4 = bob.invokes(i -> i.dApp(alice).function("checkMerkle",
                 arg(tree2.rootHash()), arg(tree2.proofByLeafIndex(4).get()), arg("five".getBytes())))
                 .getId().toString();
+        String txId2_5 = bob.invokes(i -> i.dApp(alice).function("checkMerkle",
+                arg(tree2.rootHash()), arg(tree2.proofByLeafIndex(5).get()), arg("six".getBytes())))
+                .getId().toString();
+        String txId2_6 = bob.invokes(i -> i.dApp(alice).function("checkMerkle",
+                arg(tree2.rootHash()), arg(tree2.proofByLeafIndex(6).get()), arg("seven".getBytes())))
+                .getId().toString();
+        String txId2_7 = bob.invokes(i -> i.dApp(alice).function("checkMerkle",
+                arg(tree2.rootHash()), arg(tree2.proofByLeafIndex(7).get()), arg("eight".getBytes())))
+                .getId().toString();
+        String txId2_8 = bob.invokes(i -> i.dApp(alice).function("checkMerkle",
+                arg(tree2.rootHash()), arg(tree2.proofByLeafIndex(8).get()), arg("nine".getBytes())))
+                .getId().toString();
+
         assertAll(
-                () -> assertThat(alice.dataBool(txId2_0)).as("four").isTrue(),
-                () -> assertThat(alice.dataBool(txId2_1)).as("five").isTrue()
+                () -> assertThat(alice.dataBool(txId2_0)).as("one").isTrue(),
+                () -> assertThat(alice.dataBool(txId2_1)).as("two").isTrue(),
+                () -> assertThat(alice.dataBool(txId2_2)).as("three").isTrue(),
+                () -> assertThat(alice.dataBool(txId2_3)).as("four").isTrue(),
+                () -> assertThat(alice.dataBool(txId2_4)).as("five").isTrue(),
+                () -> assertThat(alice.dataBool(txId2_5)).as("six").isTrue(),
+                () -> assertThat(alice.dataBool(txId2_6)).as("seven").isTrue(),
+                () -> assertThat(alice.dataBool(txId2_7)).as("eight").isTrue(),
+                () -> assertThat(alice.dataBool(txId2_8)).as("nine").isTrue()
         );
     }
 

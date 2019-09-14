@@ -1,63 +1,68 @@
 package im.mak.paddle.crypto;
 
 import com.google.common.primitives.Bytes;
-import com.wavesplatform.wavesj.Base58;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static com.wavesplatform.wavesj.Hash.blake2b;
+import static java.lang.Math.*;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class Merkle {
 
-    private List<byte[]> hashes;
-    private List<byte[]> proofs;
-    private byte[] root;
+    private final List<byte[]> hashes;
+    private final List<byte[]> proofs;
+    private final byte[] root;
+
+    private int sizeWithEmpty(List list) {
+        return max((int) pow(2, ceil(log(list.size()) / log(2))), 2);
+    }
 
     private List<byte[]> initProofs(List<byte[]> leafsHashes) {
         List<byte[]> result = new ArrayList<>();
         for (int i = 0; i < leafsHashes.size(); i += 2) {
             if (i + 1 < leafsHashes.size()) {
-                //TODO флаг side наверно байт, а не массив
-                result.add(Bytes.concat(new byte[]{1}, leafsHashes.get(i + 1)));
-                result.add(Bytes.concat(new byte[]{0}, leafsHashes.get(i)));
-            } else {
-                result.add(Bytes.concat(new byte[]{1}, new byte[]{}));
-            }
+                byte[] leftNode = leafsHashes.get(i);
+                byte[] rightNode = leafsHashes.get(i + 1);
+                result.add(Bytes.concat(new byte[]{0, (byte) rightNode.length}, rightNode));
+                result.add(Bytes.concat(new byte[]{1, (byte) leftNode.length}, leftNode));
+            } else result.add(new byte[]{0, 0});
         }
         return result;
     }
 
     private void increaseProofs(List<byte[]> proofs, List<byte[]> nodes) {
-        int ratio = (proofs.size() + 1) / nodes.size();
+        int ratio = sizeWithEmpty(proofs) / sizeWithEmpty(nodes);
         for (int n = 0; n < nodes.size(); n += 2) {
             if (n + 1 < nodes.size()) {
                 for (int p = 0; p < ratio; p++) {
                     int l = n * ratio + p;
                     int r = (n + 1) * ratio + p;
                     if (l < proofs.size()) {
-                        //TODO флаг side наверно байт, а не массив
-                        proofs.set(l, Bytes.concat(proofs.get(l), new byte[]{1}, nodes.get(n + 1)));
-                        if (r < proofs.size())
-                            proofs.set(r, Bytes.concat(proofs.get(r), new byte[]{0}, nodes.get(n)));
+                        byte[] rightNode = nodes.get(n + 1);
+                        proofs.set(l, Bytes.concat(proofs.get(l), new byte[]{0, (byte) rightNode.length}, rightNode));
+                        if (r < proofs.size()) {
+                            byte[] leftNode = nodes.get(n);
+                            proofs.set(r, Bytes.concat(proofs.get(r), new byte[]{1, (byte) leftNode.length}, leftNode));
+                        }
                     } else break;
                 }
             } else {
                 for (int p = 0; p < ratio; p++) {
                     int l = n * ratio + p;
-                    if (l < proofs.size()) {
-                        proofs.set(l, Bytes.concat(proofs.get(l), new byte[]{1}, new byte[]{}));
-                    } else break;
+                    if (l < proofs.size())
+                        proofs.set(l, Bytes.concat(proofs.get(l), new byte[]{0, 0}));
+                    else break;
                 }
             }
         }
     }
 
-    private byte[] findRoot(List<byte[]> nodes, boolean areNodes) {
+    private byte[] findRoot(List<byte[]> nodes) {
         final AtomicInteger counter = new AtomicInteger();
         List<List<byte[]>> nodePairs = new ArrayList<>(
                 nodes.stream()
@@ -66,7 +71,7 @@ public class Merkle {
 
         List<byte[]> nextNodes = nodePairs.stream().map(n ->
                 fastHash(Bytes.concat(
-                        new byte[]{(byte)(areNodes ? 1 : 0)}, //TODO флаг node наверно байт, а не массив
+                        new byte[]{1},
                         n.get(0),
                         n.size() == 2 ? n.get(1) : new byte[]{}
                 ))
@@ -76,7 +81,7 @@ public class Merkle {
             return nextNodes.get(0);
         else {
             increaseProofs(proofs, nextNodes);
-            return findRoot(nextNodes, true);
+            return findRoot(nextNodes);
         }
     }
 
@@ -85,18 +90,17 @@ public class Merkle {
     }
 
     private byte[] leafHash(byte[] source) {
-        //TODO флаг node наверно байт, а не массив
         return fastHash(Bytes.concat(new byte[]{0}, source));
     }
 
     public Merkle(List<byte[]> leafs) {
         hashes = leafs.stream().map(this::leafHash).collect(toList());
         proofs = initProofs(hashes);
-        root = findRoot(hashes, true);
+        root = findRoot(hashes);
     }
 
     public byte[] rootHash() {
-        return this.root.clone(); //TODO immutable getters here and below? clone()?
+        return this.root;
     }
 
     public Optional<byte[]> proofByLeafIndex(int i) {
@@ -117,29 +121,7 @@ public class Merkle {
     }
 
     public Optional<Boolean> isProofValid(byte[] proof, byte[] leafValue) {
-        Optional<byte[]> actual = proofByLeaf(leafValue);
-        /*if (actual.isPresent())
-            return Optional.of(Arrays.equals(proof, actual.get()));
-        else return Optional.empty();*/
-        return actual.map(bytes -> Arrays.equals(proof, bytes)); //TODO from IntelliJ suggestion
-    }
-
-    //TODO add leaf?
-    //TODO remove leaf?
-
-    public static void main(String[] args) {
-        List<byte[]> data = Stream.of("one"/*, "two", "three", "four", "five"*/)
-                .map(String::getBytes).collect(toList());
-
-        Merkle tree = new Merkle(data);
-
-        String proof0 = Base58.encode(tree.proofByLeafIndex(0).get());
-//        String proof1 = Base58.encode(tree.proofByLeafIndex(1).get());
-//        String proof2 = Base58.encode(tree.proofByLeafIndex(2).get());
-//        String proof3 = Base58.encode(tree.proofByLeafIndex(3).get());
-//        String proof4 = Base58.encode(tree.proofByLeafIndex(4).get());
-
-        System.out.println();
+        return proofByLeaf(leafValue).map(bytes -> Arrays.equals(proof, bytes));
     }
 
 }
