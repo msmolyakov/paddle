@@ -14,7 +14,7 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-class MerkleTest {
+class MerkleTreeTest {
 
     private DockerNode node;
     private Account alice, bob;
@@ -37,7 +37,7 @@ class MerkleTest {
 
     @Test
     void merkle() {
-        Merkle tree0 = new Merkle(Stream.of("one")
+        MerkleTree tree0 = new MerkleTree(Stream.of("one")
                 .map(String::getBytes).collect(toList()));
         String txId0 = bob.invokes(i -> i.dApp(alice).function("checkMerkle",
                 arg(tree0.rootHash()), arg(tree0.proofByLeafIndex(0).get()), arg("one".getBytes())))
@@ -45,7 +45,7 @@ class MerkleTest {
         assertThat(alice.dataBool(txId0)).isTrue();
 
 
-        Merkle tree1 = new Merkle(Stream.of("one", "two")
+        MerkleTree tree1 = new MerkleTree(Stream.of("one", "two")
                 .map(String::getBytes).collect(toList()));
         String txId1_0 = bob.invokes(i -> i.dApp(alice).function("checkMerkle",
                 arg(tree1.rootHash()), arg(tree1.proofByLeafIndex(0).get()), arg("one".getBytes())))
@@ -59,7 +59,7 @@ class MerkleTest {
         );
 
 
-        Merkle tree2 = new Merkle(Stream.of("one", "two", "three", "four", "five", "six", "seven", "eight", "nine")
+        MerkleTree tree2 = new MerkleTree(Stream.of("one", "two", "three", "four", "five", "six", "seven", "eight", "nine")
                 .map(String::getBytes).collect(toList()));
         String txId2_0 = bob.invokes(i -> i.dApp(alice).function("checkMerkle",
                 arg(tree2.rootHash()), arg(tree2.proofByLeafIndex(0).get()), arg("one".getBytes())))

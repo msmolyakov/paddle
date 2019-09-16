@@ -2,7 +2,7 @@ package im.mak.paddle.crypto;
 
 public enum HashAlg {
 
-    NONE("NONE"),
+    NOALG("NONE"),
     MD5("MD5"),
     SHA1("SHA1"),
     SHA224("SHA224"),

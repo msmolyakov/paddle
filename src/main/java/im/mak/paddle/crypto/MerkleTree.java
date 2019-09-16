@@ -12,7 +12,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
 
 @SuppressWarnings({"WeakerAccess", "unused"})
-public class Merkle {
+public class MerkleTree {
 
     private final List<byte[]> hashes;
     private final List<byte[]> proofs;
@@ -91,7 +91,7 @@ public class Merkle {
         return fastHash(Bytes.concat(LEAF, source));
     }
 
-    public Merkle(List<byte[]> leafs) {
+    public MerkleTree(List<byte[]> leafs) {
         hashes = leafs.stream().map(this::leafHash).collect(toList());
         proofs = initProofs(hashes);
         root = findRoot(hashes);

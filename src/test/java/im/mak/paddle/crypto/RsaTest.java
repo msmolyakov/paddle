@@ -2,7 +2,6 @@ package im.mak.paddle.crypto;
 
 import im.mak.paddle.Account;
 import im.mak.paddle.DockerNode;
-import im.mak.paddle.crypto.Rsa;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,9 +52,9 @@ class RsaTest {
         alice.writes(d -> d.fee(20000000)
                 .binary("source-245-bytes", source245b)
                 .binary("source-32-kb", source32kb)
-                .binary("public-key", rsa.keys.getPublic().getEncoded())
+                .binary("public-key", rsa.publicKey())
 
-                .binary("proof_none", rsa.sign(NONE, source245b))
+                .binary("proof_noalg", rsa.sign(NOALG, source245b))
                 .binary("proof_md5", rsa.sign(MD5, source32kb))
                 .binary("proof_sha1", rsa.sign(SHA1, source32kb))
 
@@ -77,7 +76,7 @@ class RsaTest {
         );
 
         assertAll(
-                () -> assertThat(alice.dataBool("result_none")).isTrue(),
+                () -> assertThat(alice.dataBool("result_noalg")).isTrue(),
                 () -> assertThat(alice.dataBool("result_md5")).isTrue(),
                 () -> assertThat(alice.dataBool("result_sha1")).isTrue(),
 

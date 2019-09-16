@@ -9,7 +9,7 @@ let publicKey = this.getBinaryValue("public-key")
 @Callable(inv)
 func group1() = {
     WriteSet([
-        DataEntry("result_none", rsaVerify(NOALG, source245b, this.getBinaryValue("proof_none"), publicKey)),
+        DataEntry("result_noalg", rsaVerify(NOALG, source245b, this.getBinaryValue("proof_noalg"), publicKey)),
         DataEntry("result_md5", rsaVerify(MD5, source32kb, this.getBinaryValue("proof_md5"), publicKey)),
         DataEntry("result_sha1", rsaVerify(SHA1, source32kb, this.getBinaryValue("proof_sha1"), publicKey))
     ])

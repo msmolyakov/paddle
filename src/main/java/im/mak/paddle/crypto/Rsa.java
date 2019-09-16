@@ -6,22 +6,29 @@ import java.security.*;
 
 public class Rsa {
 
-    private BouncyCastleProvider bcp;
-    private KeyPairGenerator gen;
-
-    public KeyPair keys;
+    private final BouncyCastleProvider bcp;
+    private final KeyPair keys;
 
     public Rsa() {
         this.bcp = new BouncyCastleProvider();
 
+        KeyPairGenerator gen;
         try {
-            this.gen = KeyPairGenerator.getInstance("RSA");
+            gen = KeyPairGenerator.getInstance("RSA");
         } catch (NoSuchAlgorithmException e) {
             throw new Error(e);
         }
         gen.initialize(2048, new SecureRandom());
 
         this.keys = gen.generateKeyPair();
+    }
+
+    public byte[] privateKey() {
+        return keys.getPrivate().getEncoded();
+    }
+
+    public byte[] publicKey() {
+        return keys.getPublic().getEncoded();
     }
 
     public byte[] sign(HashAlg alg, byte[] source) {

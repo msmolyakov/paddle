@@ -29,6 +29,8 @@ Read this documentation in [Russian](README_ru.md).
 - [Other features](#other-features)
   - [Waitings](#waitings)
   - [Asynchronous actions](#asynchronous-actions)
+  - [RSA encryption](#rsa-encryption)
+  - [Merkle tree](#merkle-tree)
 - [What next?](#what-next)
 
 ## Getting started
@@ -410,6 +412,44 @@ async(
 At now, all operations will be executed in three threads, and only dependent transactions will be sent consecutively.
 
 `Async` waits for all operations to be completed.
+
+### RSA Encryption
+
+Function `rsaVerify()` in Ride checks that the RSA signature is valid, i.e. it was created by the owner of the public key.
+
+With Paddle you can create a signature like this:
+```java
+Rsa rsa = new Rsa(); // generated private and public keys pair
+byte[] prKey = rsa.privateKey();
+byte[] pubKey = rsa.publicKey();
+// signature created by the private key with SHA256 algorithm
+byte[] signature = rsa.sign(HashAlg.SHA256, "Hello!".getBytes());
+```
+
+`HashAlg` contains all hashing algorithms supported in Ride:
+* NOALG
+* MD5
+* SHA1
+* SHA224
+* SHA256
+* SHA384
+* SHA512
+* SHA3_224
+* SHA3_256
+* SHA3_384
+* SHA3_512
+
+### Merkle Tree
+
+Function `checkMerkleProof()` in Ride checks that the data is part of the Merkle tree.
+
+With Paddle you can create such a Merkle tree and get data proofs:
+```java
+List<byte[]> leafs = asList("one".getBytes(), "two".getBytes(), "three".getBytes());
+MerkleTree tree = new MerkleTree(leafs);
+byte[] rootHash = tree.rootHash();
+byte[] proof = tree.proofByLeaf("two".getBytes()).get();
+```
 
 ## What next?
 
