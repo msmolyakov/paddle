@@ -53,7 +53,7 @@ Paddle - Java библиотека для тестирования смарт к
 <dependency>
     <groupId>im.mak</groupId>
     <artifactId>paddle</artifactId>
-    <version>0.3</version>
+    <version>0.4</version>
 </dependency>
 ```
 
@@ -61,12 +61,12 @@ Paddle - Java библиотека для тестирования смарт к
 
 Groovy DSL:
 ```groovy
-implementation 'im.mak:paddle:0.3'
+implementation 'im.mak:paddle:0.4'
 ```
 
 Kotlin DSL:
 ```kotlin
-compile("im.mak:paddle:0.3")
+compile("im.mak:paddle:0.4")
 ```
 
 ### Пример использования
