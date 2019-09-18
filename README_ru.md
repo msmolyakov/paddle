@@ -4,7 +4,7 @@
 
 Paddle - Java библиотека для тестирования смарт контрактов на [блокчейне Waves](https://wavesplatform.com/).
 
-Читать эту документацию на [английском](README.md).
+<p align="right">Read this documentation in <a href="README.md">English</a>.</p>
 
 ## Оглавление
 
