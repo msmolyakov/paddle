@@ -4,7 +4,7 @@
 
 Paddle is a Java library to write tests for your dApps and other smart contracts on Waves blockchain.
 
-<p align="right">Читать эту документацию на <a href="README_RU.md">русском</a>.</p>
+<p align="right">Читать эту документацию на <a href="README_ru.md">русском</a>.</p>
 
 ## Table of Contents
 
