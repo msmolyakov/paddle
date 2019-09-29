@@ -1,5 +1,13 @@
 package im.mak.paddle;
 
+import com.spotify.docker.client.DefaultDockerClient;
+import com.spotify.docker.client.DockerClient;
+import com.spotify.docker.client.exceptions.DockerCertificateException;
+import com.spotify.docker.client.exceptions.DockerException;
+import com.spotify.docker.client.messages.ContainerConfig;
+import com.spotify.docker.client.messages.ContainerCreation;
+import com.spotify.docker.client.messages.HostConfig;
+import com.spotify.docker.client.messages.PortBinding;
 import com.wavesplatform.wavesj.DataEntry;
 import com.wavesplatform.wavesj.Transaction;
 import com.wavesplatform.wavesj.matcher.Order;
@@ -8,6 +16,9 @@ import com.wavesplatform.wavesj.transactions.*;
 import im.mak.paddle.actions.*;
 import im.mak.paddle.api.Api;
 import im.mak.paddle.exceptions.NodeError;
+import im.mak.paddle.settings.Env;
+import im.mak.paddle.settings.PaddleSettings;
+import im.mak.paddle.settings.NodeOptions;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -18,27 +29,91 @@ import static im.mak.paddle.actions.exchange.OrderType.SELL;
 
 public class Node {
 
+    private NodeOptions options;
     private com.wavesplatform.wavesj.Node wavesNode;
+
     public Account rich;
 
     public Api api;
 
-    public int blockWaitingInSeconds;
-    public int transactionWaitingInSeconds;
+    public Node(NodeOptions options) {
+        this.options = options;
+        Env env = new PaddleSettings().env;
+        //TODO move to PaddleSettings or Env constructor? And change this.options to read-only this.env?
+        if (options.apiUrl == null) options.uri(env.apiUrl());
+        if (options.chainId == null) options.chainId(env.chainId());
+        if (options.blockInterval < 0) options.blockInterval(env.blockInterval());
+        if (options.faucetSeed == null) options.faucetSeed(env.faucetSeed());
+        if (options.dockerImage == null) options.dockerImage(env.dockerImage());
+        if (options.autoShutdown == null) options.autoShutdown(env.autoShutdown());
 
-    public Node(String uri, char chainId, String richSeed) {
         try {
-            this.wavesNode = new com.wavesplatform.wavesj.Node(uri, chainId);
+            //TODO apiUrl.toString() ?
+            this.wavesNode = new com.wavesplatform.wavesj.Node(options.apiUrl.toString(), options.chainId);
 
             this.api = new Api(this.wavesNode.getUri());
 
-            this.rich = new Account(richSeed, this);
-
-            this.blockWaitingInSeconds = 180;
-            this.transactionWaitingInSeconds = 60;
+            this.rich = new Account(options.faucetSeed, this);
         } catch (URISyntaxException e) {
             throw new NodeError(e);
         }
+
+        if (options.dockerImage != null) {
+            try {
+                //TODO if port is already used - try to connect, otherwise error
+
+                DockerClient docker = DefaultDockerClient.fromEnv().build();
+                if (docker.listImages(DockerClient.ListImagesParam.byName(options.dockerImage)).size() < 1) {
+                    docker.pull(options.dockerImage);
+                } else {
+                    //TODO if remote Hub is available, local image exists and image hashes are different then pull again
+                }
+
+                Map<String, List<PortBinding>> portBindings = new HashMap<>();
+                List<PortBinding> hostPorts = new ArrayList<>();
+                hostPorts.add(PortBinding.of("0.0.0.0", options.apiUrl.getPort())); //TODO is 80 if not specified?
+                portBindings.put("6869", hostPorts);
+
+                HostConfig hostConfig = HostConfig.builder().portBindings(portBindings).build();
+
+                ContainerConfig containerConfig = ContainerConfig.builder()
+                        .hostConfig(hostConfig)
+                        .image(options.dockerImage)
+                        .exposedPorts("6869")
+                        .build();
+
+                ContainerCreation container = this.docker.createContainer(containerConfig);
+                this.containerId = container.id();
+
+                this.docker.startContainer(this.containerId);
+
+                //wait node readiness
+                boolean isNodeReady = false;
+                for (int repeat = 0; repeat < 60; repeat++) {
+                    try {
+                        api.version();
+                        isNodeReady = true;
+                        break;
+                    } catch (NodeError e) {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ignore) {}
+                    }
+                }
+                if (!isNodeReady) throw new NodeError("Could not wait for node readiness");
+            } catch (DockerException | DockerCertificateException | InterruptedException e) {
+                throw new NodeError(e);
+            }
+
+            if (options.autoShutdown)
+                Runtime.getRuntime().addShutdownHook(new Thread() {
+                    //TODO if shutdown enabled - create task for shutdown
+                });
+        }
+    }
+
+    public Node() {
+        this(NodeOptions.options());
     }
 
     public byte chainId() {
@@ -269,7 +344,7 @@ public class Node {
     }
 
     public Transaction waitForTransaction(String id) {
-        return waitForTransaction(id, this.transactionWaitingInSeconds);
+        return waitForTransaction(id, (int)(options.blockInterval / 1000));
     }
 
     public int waitForHeight(int target, int blockWaitingInSeconds) {
@@ -301,7 +376,7 @@ public class Node {
     }
 
     public int waitForHeight(int expectedHeight) {
-        return waitForHeight(expectedHeight, this.blockWaitingInSeconds);
+        return waitForHeight(expectedHeight, (int)(options.blockInterval * 3 / 1000));
     }
 
     public int waitNBlocks(int blocksCount, int blockWaitingInSeconds) {
@@ -311,7 +386,7 @@ public class Node {
     }
 
     public int waitNBlocks(int blocksCount) {
-        return waitNBlocks(blocksCount, this.blockWaitingInSeconds);
+        return waitNBlocks(blocksCount, (int)(options.blockInterval * 3 / 1000));
     }
 
 }
