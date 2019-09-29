@@ -26,6 +26,7 @@ import static im.mak.paddle.actions.exchange.OrderType.BUY;
 import static im.mak.paddle.actions.exchange.OrderType.SELL;
 import static java.util.Collections.singletonList;
 
+@SuppressWarnings("WeakerAccess")
 public class Node {
 
     private static Node instance;
@@ -58,15 +59,15 @@ public class Node {
             String containerId;
             try {
                 docker = DefaultDockerClient.fromEnv().build();
-                if (docker.listImages(DockerClient.ListImagesParam.byName(conf.dockerImage)).size() < 1) {
+                try {
                     docker.pull(conf.dockerImage);
-                } else {
-                    //TODO if remote Hub is available, local image exists and image hashes are different then pull again
-                }
+                } catch (DockerException | InterruptedException ignore) {}
 
+                URL apiUrl = new URL(conf.apiUrl);
+                int port = apiUrl.getPort() < 0 ? 80 : apiUrl.getPort();
                 Map<String, List<PortBinding>> portBindings = new HashMap<>();
                 portBindings.put("6869", singletonList(PortBinding
-                        .of("0.0.0.0", new URL(conf.apiUrl).getPort()))); //TODO is 80 if not specified?
+                        .of("0.0.0.0", port)));
                 HostConfig hostConfig = HostConfig.builder().portBindings(portBindings).build();
                 ContainerConfig containerConfig = ContainerConfig.builder()
                         .hostConfig(hostConfig)
