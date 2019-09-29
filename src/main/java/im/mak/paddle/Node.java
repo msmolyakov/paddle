@@ -5,7 +5,6 @@ import com.spotify.docker.client.DockerClient;
 import com.spotify.docker.client.exceptions.DockerCertificateException;
 import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.ContainerConfig;
-import com.spotify.docker.client.messages.ContainerCreation;
 import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.PortBinding;
 import com.wavesplatform.wavesj.DataEntry;
@@ -16,76 +15,67 @@ import com.wavesplatform.wavesj.transactions.*;
 import im.mak.paddle.actions.*;
 import im.mak.paddle.api.Api;
 import im.mak.paddle.exceptions.NodeError;
-import im.mak.paddle.settings.Env;
-import im.mak.paddle.settings.PaddleSettings;
-import im.mak.paddle.settings.NodeOptions;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.*;
 
 import static im.mak.paddle.actions.exchange.OrderType.BUY;
 import static im.mak.paddle.actions.exchange.OrderType.SELL;
+import static java.util.Collections.singletonList;
 
 public class Node {
 
-    private NodeOptions options;
-    private com.wavesplatform.wavesj.Node wavesNode;
+    private static Node instance;
 
-    public Account rich;
+    public static Node node() {
+        if (instance == null) synchronized (Node.class) {
+            if (instance == null) instance = new Node();
+        }
+        return instance;
+    }
+
+    private final Settings conf;
+    private final com.wavesplatform.wavesj.Node wavesNode;
+    private Account faucet;
 
     public Api api;
 
-    public Node(NodeOptions options) {
-        this.options = options;
-        Env env = new PaddleSettings().env;
-        //TODO move to PaddleSettings or Env constructor? And change this.options to read-only this.env?
-        if (options.apiUrl == null) options.uri(env.apiUrl());
-        if (options.chainId == null) options.chainId(env.chainId());
-        if (options.blockInterval < 0) options.blockInterval(env.blockInterval());
-        if (options.faucetSeed == null) options.faucetSeed(env.faucetSeed());
-        if (options.dockerImage == null) options.dockerImage(env.dockerImage());
-        if (options.autoShutdown == null) options.autoShutdown(env.autoShutdown());
+    private Node() {
+        conf = new Settings();
 
         try {
-            //TODO apiUrl.toString() ?
-            this.wavesNode = new com.wavesplatform.wavesj.Node(options.apiUrl.toString(), options.chainId);
-
+            this.wavesNode = new com.wavesplatform.wavesj.Node(conf.apiUrl, conf.chainId);
             this.api = new Api(this.wavesNode.getUri());
-
-            this.rich = new Account(options.faucetSeed, this);
         } catch (URISyntaxException e) {
             throw new NodeError(e);
         }
 
-        if (options.dockerImage != null) {
+        if (conf.dockerImage != null) {
+            DockerClient docker;
+            String containerId;
             try {
-                //TODO if port is already used - try to connect, otherwise error
-
-                DockerClient docker = DefaultDockerClient.fromEnv().build();
-                if (docker.listImages(DockerClient.ListImagesParam.byName(options.dockerImage)).size() < 1) {
-                    docker.pull(options.dockerImage);
+                docker = DefaultDockerClient.fromEnv().build();
+                if (docker.listImages(DockerClient.ListImagesParam.byName(conf.dockerImage)).size() < 1) {
+                    docker.pull(conf.dockerImage);
                 } else {
                     //TODO if remote Hub is available, local image exists and image hashes are different then pull again
                 }
 
                 Map<String, List<PortBinding>> portBindings = new HashMap<>();
-                List<PortBinding> hostPorts = new ArrayList<>();
-                hostPorts.add(PortBinding.of("0.0.0.0", options.apiUrl.getPort())); //TODO is 80 if not specified?
-                portBindings.put("6869", hostPorts);
-
+                portBindings.put("6869", singletonList(PortBinding
+                        .of("0.0.0.0", new URL(conf.apiUrl).getPort()))); //TODO is 80 if not specified?
                 HostConfig hostConfig = HostConfig.builder().portBindings(portBindings).build();
-
                 ContainerConfig containerConfig = ContainerConfig.builder()
                         .hostConfig(hostConfig)
-                        .image(options.dockerImage)
+                        .image(conf.dockerImage)
                         .exposedPorts("6869")
                         .build();
 
-                ContainerCreation container = this.docker.createContainer(containerConfig);
-                this.containerId = container.id();
-
-                this.docker.startContainer(this.containerId);
+                containerId = docker.createContainer(containerConfig).id();
+                docker.startContainer(containerId);
 
                 //wait node readiness
                 boolean isNodeReady = false;
@@ -95,25 +85,31 @@ public class Node {
                         isNodeReady = true;
                         break;
                     } catch (NodeError e) {
-                        try {
-                            Thread.sleep(1000);
-                        } catch (InterruptedException ignore) {}
+                        try { Thread.sleep(1000); } catch (InterruptedException ignore) {}
                     }
                 }
                 if (!isNodeReady) throw new NodeError("Could not wait for node readiness");
-            } catch (DockerException | DockerCertificateException | InterruptedException e) {
+            } catch (DockerException | DockerCertificateException | InterruptedException | MalformedURLException e) {
                 throw new NodeError(e);
             }
 
-            if (options.autoShutdown)
-                Runtime.getRuntime().addShutdownHook(new Thread() {
-                    //TODO if shutdown enabled - create task for shutdown
-                });
+            if (conf.autoShutdown)
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                    try {
+                        if (docker != null
+                                && docker.listContainers().stream().anyMatch(c -> c.id().equals(containerId))) {
+                            docker.killContainer(containerId);
+                            docker.removeContainer(containerId);
+                            docker.close();
+                        }
+                    } catch (DockerException | InterruptedException e) { e.printStackTrace(); }
+                }));
         }
     }
 
-    public Node() {
-        this(NodeOptions.options());
+    public Account faucet() {
+        if (faucet == null) faucet = new Account(conf.faucetSeed);
+        return faucet;
     }
 
     public byte chainId() {
@@ -318,7 +314,7 @@ public class Node {
     public InvokeScriptTransaction send(InvokeScript invoke) {
         try {
             return (InvokeScriptTransaction) waitForTransaction(wavesNode.invokeScript(
-                    invoke.sender.wavesAccount, invoke.sender.node.chainId(),
+                    invoke.sender.wavesAccount, this.chainId(),
                     invoke.dApp, invoke.call, invoke.payments, invoke.calcFee(), invoke.feeAssetId));
         } catch (IOException e) {
             throw new NodeError(e);
@@ -344,7 +340,7 @@ public class Node {
     }
 
     public Transaction waitForTransaction(String id) {
-        return waitForTransaction(id, (int)(options.blockInterval / 1000));
+        return waitForTransaction(id, (int)(conf.blockInterval / 1000));
     }
 
     public int waitForHeight(int target, int blockWaitingInSeconds) {
@@ -376,7 +372,7 @@ public class Node {
     }
 
     public int waitForHeight(int expectedHeight) {
-        return waitForHeight(expectedHeight, (int)(options.blockInterval * 3 / 1000));
+        return waitForHeight(expectedHeight, (int)(conf.blockInterval * 3 / 1000));
     }
 
     public int waitNBlocks(int blocksCount, int blockWaitingInSeconds) {
@@ -386,7 +382,7 @@ public class Node {
     }
 
     public int waitNBlocks(int blocksCount) {
-        return waitNBlocks(blocksCount, (int)(options.blockInterval * 3 / 1000));
+        return waitNBlocks(blocksCount, (int)(conf.blockInterval * 3 / 1000));
     }
 
 }

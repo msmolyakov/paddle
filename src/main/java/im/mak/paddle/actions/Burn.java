@@ -4,6 +4,7 @@ import im.mak.paddle.Account;
 
 import static im.mak.paddle.Constants.EXTRA_FEE;
 import static im.mak.paddle.Constants.MIN_FEE;
+import static im.mak.paddle.Node.node;
 
 public class Burn implements Action {
 
@@ -45,7 +46,7 @@ public class Burn implements Action {
         } else {
             long totalFee = MIN_FEE;
             totalFee += sender.isSmart() ? EXTRA_FEE : 0;
-            totalFee += sender.node.isSmart(assetId) ? EXTRA_FEE : 0;
+            totalFee += node().isSmart(assetId) ? EXTRA_FEE : 0;
             return totalFee;
         }
     }

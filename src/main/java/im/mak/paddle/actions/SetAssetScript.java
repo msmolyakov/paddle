@@ -4,6 +4,7 @@ import im.mak.paddle.Account;
 
 import static im.mak.paddle.Constants.EXTRA_FEE;
 import static im.mak.paddle.Constants.ONE_WAVES;
+import static im.mak.paddle.Node.node;
 
 public class SetAssetScript implements Action {
 
@@ -27,7 +28,7 @@ public class SetAssetScript implements Action {
     }
 
     public SetAssetScript script(String sourceCode) {
-        this.compiledScript = sourceCode == null ? null : this.sender.node.compileScript(sourceCode);
+        this.compiledScript = sourceCode == null ? null : node().compileScript(sourceCode);
         return this;
     }
 
@@ -43,7 +44,7 @@ public class SetAssetScript implements Action {
         } else {
             long totalFee = ONE_WAVES;
             totalFee += sender.isSmart() ? EXTRA_FEE : 0;
-            totalFee += sender.node.isSmart(assetId) ? EXTRA_FEE : 0;
+            totalFee += node().isSmart(assetId) ? EXTRA_FEE : 0;
             return totalFee;
         }
     }

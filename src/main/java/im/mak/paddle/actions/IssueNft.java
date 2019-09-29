@@ -6,6 +6,7 @@ import java.util.Random;
 
 import static im.mak.paddle.Constants.EXTRA_FEE;
 import static im.mak.paddle.Constants.MIN_FEE;
+import static im.mak.paddle.Node.node;
 
 public class IssueNft implements Action {
 
@@ -44,7 +45,7 @@ public class IssueNft implements Action {
     }
 
     public IssueNft script(String sourceCode) {
-        this.compiledScript = sourceCode == null ? null : this.sender.node.compileScript(sourceCode);
+        this.compiledScript = sourceCode == null ? null : node().compileScript(sourceCode);
         return this;
     }
 
