@@ -6,6 +6,7 @@ import java.util.Random;
 
 import static im.mak.paddle.Constants.EXTRA_FEE;
 import static im.mak.paddle.Constants.ONE_WAVES;
+import static im.mak.paddle.Node.node;
 
 public class Issue implements Action {
 
@@ -67,7 +68,7 @@ public class Issue implements Action {
     }
 
     public Issue script(String sourceCode) {
-        this.compiledScript = sourceCode == null ? null : this.sender.node.compileScript(sourceCode);
+        this.compiledScript = sourceCode == null ? null : node().compileScript(sourceCode);
         return this;
     }
 

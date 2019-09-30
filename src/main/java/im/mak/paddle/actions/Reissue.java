@@ -4,6 +4,7 @@ import im.mak.paddle.Account;
 
 import static im.mak.paddle.Constants.EXTRA_FEE;
 import static im.mak.paddle.Constants.ONE_WAVES;
+import static im.mak.paddle.Node.node;
 
 public class Reissue implements Action {
 
@@ -60,7 +61,7 @@ public class Reissue implements Action {
         } else {
             long totalFee = ONE_WAVES;
             totalFee += sender.isSmart() ? EXTRA_FEE : 0;
-            totalFee += sender.node.isSmart(assetId) ? EXTRA_FEE : 0;
+            totalFee += node().isSmart(assetId) ? EXTRA_FEE : 0;
             return totalFee;
         }
     }

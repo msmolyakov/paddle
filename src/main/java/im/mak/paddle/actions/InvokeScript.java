@@ -11,6 +11,7 @@ import java.util.List;
 
 import static im.mak.paddle.Constants.EXTRA_FEE;
 import static im.mak.paddle.Constants.MIN_FEE;
+import static im.mak.paddle.Node.node;
 
 public class InvokeScript implements Action {
 
@@ -89,7 +90,7 @@ public class InvokeScript implements Action {
             long totalFee = MIN_FEE + EXTRA_FEE;
             totalFee += sender.isSmart() ? EXTRA_FEE : 0;
             for (Payment pmt : payments)
-                totalFee += sender.node.isSmart(pmt.getAssetId()) ? EXTRA_FEE : 0;
+                totalFee += node().isSmart(pmt.getAssetId()) ? EXTRA_FEE : 0;
             return totalFee;
         }
     }

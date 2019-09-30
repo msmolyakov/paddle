@@ -5,6 +5,7 @@ import im.mak.paddle.Account;
 
 import static im.mak.paddle.Constants.EXTRA_FEE;
 import static im.mak.paddle.Constants.MIN_FEE;
+import static im.mak.paddle.Node.node;
 import static im.mak.paddle.actions.exchange.OrderType.BUY;
 import static im.mak.paddle.actions.exchange.OrderType.SELL;
 
@@ -70,8 +71,8 @@ public class Order {
             long fee = MIN_FEE * 3;
             //note! Scripted sender does not require an extra fee
             fee += matcher.isSmart() ? EXTRA_FEE : 0;
-            fee += sender.node.isSmart(pair.getAmountAsset()) ? EXTRA_FEE : 0;
-            fee += sender.node.isSmart(pair.getPriceAsset()) ? EXTRA_FEE : 0;
+            fee += node().isSmart(pair.getAmountAsset()) ? EXTRA_FEE : 0;
+            fee += node().isSmart(pair.getPriceAsset()) ? EXTRA_FEE : 0;
             return fee;
         }
     }

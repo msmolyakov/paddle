@@ -3,8 +3,6 @@ package im.mak.paddle.e2e;
 import com.wavesplatform.wavesj.Base58;
 import com.wavesplatform.wavesj.DataEntry;
 import im.mak.paddle.Account;
-import im.mak.paddle.DockerNode;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -15,22 +13,14 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 class AccountTest {
 
-    private DockerNode node;
     private Account alice, bob;
 
     @BeforeEach
     void before() {
-        node = new DockerNode();
-
         async(
-                () -> alice = new Account(node, 10_00000000L),
-                () -> bob = new Account(node, 10_00000000L)
+                () -> alice = new Account(10_00000000L),
+                () -> bob = new Account(10_00000000L)
         );
-    }
-
-    @AfterEach
-    void after() {
-        node.shutdown();
     }
 
     @Test

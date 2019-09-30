@@ -1,8 +1,6 @@
 package im.mak.paddle.crypto;
 
 import im.mak.paddle.Account;
-import im.mak.paddle.DockerNode;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +14,6 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 class RsaTest {
 
-    private DockerNode node;
     private Account alice, bob;
 
     private Rsa rsa;
@@ -24,22 +21,15 @@ class RsaTest {
 
     @BeforeEach
     void before() {
-        node= new DockerNode();
-
         rsa = new Rsa();
         source245b = (String.join("", Collections.nCopies(122, "ё")) + "b").getBytes();
         source32kb = (String.join("", Collections.nCopies(16382, "ё")) + "bbb").getBytes();
 
         async(
-                () -> alice = new Account(node, 1_00000000),
-                () -> bob = new Account(node, 1_00000000)
+                () -> alice = new Account(1_00000000),
+                () -> bob = new Account(1_00000000)
         );
         alice.setsScript(s -> s.script(fromFile("rsa.ride")));
-    }
-
-    @AfterEach
-    void after() {
-        node.shutdown();
     }
 
     @Test

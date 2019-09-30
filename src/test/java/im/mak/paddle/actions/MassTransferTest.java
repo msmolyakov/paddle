@@ -2,8 +2,6 @@ package im.mak.paddle.actions;
 
 import com.wavesplatform.wavesj.transactions.MassTransferTransaction;
 import im.mak.paddle.Account;
-import im.mak.paddle.DockerNode;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -15,37 +13,29 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 class MassTransferTest {
 
-    private DockerNode node;
     private Account alice, bob, carol, dave, eve;
     private String tokenId;
 
     @BeforeAll
     void before() {
-        node = new DockerNode();
-
         async(
                 () -> {
-                    alice = new Account(node, 1_00000000L + 300000 + 100 + 700000);
+                    alice = new Account(1_00000000L + 300000 + 100 + 700000);
                     tokenId = alice.issues(a -> a.quantity(1000).decimals(0).script("true")).getId().toString();
                 },
                 () -> {
-                    bob = new Account(node);
-                    carol = new Account(node);
+                    bob = new Account();
+                    carol = new Account();
                 },
                 () -> {
-                    dave = new Account(node, 100000);
+                    dave = new Account(100000);
                     dave.createsAlias(a -> a.alias("dave"));
                 },
                 () -> {
-                    eve = new Account(node, 100000);
+                    eve = new Account(100000);
                     eve.createsAlias(a -> a.alias("eves.alias.with.maximum.length"));
                 }
         );
-    }
-
-    @AfterAll
-    void after() {
-        node.shutdown();
     }
 
     @Test

@@ -1,7 +1,6 @@
 package im.mak.paddle.e2e;
 
 import im.mak.paddle.Account;
-import im.mak.paddle.DockerNode;
 import org.junit.jupiter.api.*;
 
 import static im.mak.paddle.Constants.MIN_FEE;
@@ -10,20 +9,12 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 class IssueNftTest {
 
-    private DockerNode node;
     private Account alice, bob;
 
     @BeforeEach
     void before() {
-        node = new DockerNode();
-
-        alice = new Account(node, 10_00000000L);
-        bob = new Account(node);
-    }
-
-    @AfterEach
-    void after() {
-        node.shutdown();
+        alice = new Account(10_00000000L);
+        bob = new Account();
     }
 
     @Test

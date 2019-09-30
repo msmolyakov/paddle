@@ -4,6 +4,7 @@ import im.mak.paddle.Account;
 
 import static im.mak.paddle.Constants.EXTRA_FEE;
 import static im.mak.paddle.Constants.MIN_FEE;
+import static im.mak.paddle.Node.node;
 
 public class SetScript implements Action {
 
@@ -21,7 +22,7 @@ public class SetScript implements Action {
     }
 
     public SetScript script(String sourceCode) {
-        this.compiledScript = sourceCode == null ? null : this.sender.node.compileScript(sourceCode);
+        this.compiledScript = sourceCode == null ? null : node().compileScript(sourceCode);
         return this;
     }
 

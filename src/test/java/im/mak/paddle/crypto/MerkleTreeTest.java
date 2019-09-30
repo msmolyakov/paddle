@@ -1,8 +1,6 @@
 package im.mak.paddle.crypto;
 
 import im.mak.paddle.Account;
-import im.mak.paddle.DockerNode;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import java.util.stream.Stream;
@@ -16,23 +14,15 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 class MerkleTreeTest {
 
-    private DockerNode node;
     private Account alice, bob;
 
     @BeforeEach
     void before() {
-        node = new DockerNode();
-
         async(
-                () -> alice = new Account(node, 1_00000000),
-                () -> bob = new Account(node, 1_00000000)
+                () -> alice = new Account(1_00000000),
+                () -> bob = new Account(1_00000000)
         );
         alice.setsScript(s -> s.script(fromFile("merkle.ride")));
-    }
-
-    @AfterEach
-    void after() {
-        node.shutdown();
     }
 
     @Test

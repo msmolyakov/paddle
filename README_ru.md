@@ -14,10 +14,11 @@ Paddle - Java библиотека для тестирования смарт к
   - [Пример использования](#пример-использования)
   - [Пример теста на JUnit 5](#пример-теста-на-junit-5)
 - [Жизненный цикл теста](#жизненный-цикл-теста)
-- [Тестовое окружение](#тестовое-окружение)
+- [Настройка Paddle](#настройка-paddle)
+  - [Преднастроенные профили](#преднастроенные-профили)
+  - [Пользовательские профили](#пользовательские-профили)
   - [Запуск ноды в Docker](#запуск-ноды-в-docker)
-  - [Подключение к существующей ноде](#подключение-к-существующей-ноде)
-  - [Методы объекта Node](#методы-объекта-node)
+- [Объект Node](#объект-node)
 - [Аккаунт](#аккаунт)
   - [Получение информации об аккаунте](#получение-информации-об-аккаунте)
   - [Подпись данных и отправка транзакций](#подпись-данных-и-отправка-транзакций)
@@ -73,28 +74,22 @@ compile("im.mak:paddle:0.4.1")
 
 ```java
 import im.mak.paddle.Account;
-import im.mak.paddle.DockerNode;
-
 public class Main {
-
     public static void main(String[] args) {
 
-        // Скачать Docker образ и запустить ноду Waves
-        DockerNode node = new DockerNode();
-
         // Создать два аккаунта
-        Account alice = new Account(node, 10_00000000); // аккаунт с балансом 10 Waves
-        Account bob = new Account(node);                // аккаунт с пустым балансом
+        // При создании первого аккаунта Paddle автоматически скачал и запустил ноду Waves в Docker контейнере!
+        Account alice = new Account(10_00000000); // аккаунт с балансом 10 Waves
+        Account bob = new Account();              // аккаунт с пустым балансом
 
-        // Отправить 3 Waves Бобу и подождать, пока Transfer транзакция попадет в блокчейн
+        // Алиса отправляет 3 Waves Бобу
+        // Paddle ждет, пока Transfer транзакция попадет в блокчейн
         alice.transfers(t -> t.to(bob).amount(3_00000000));
 
         System.out.println( bob.balance() ); // 300000000
         
-        // Выключить Docker контейнер с нодой
-        node.shutdown();
+        // При завершении программы Paddle автоматически выключит Docker контейнер с нодой
     }
-
 }
 ```
 
@@ -102,33 +97,25 @@ public class Main {
 
 ```java
 import im.mak.paddle.Account;
-import im.mak.paddle.DockerNode;
 import org.junit.jupiter.api.*;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class FirstTest {
 
-    private DockerNode node;
     private Account alice, bob;
     private String assetId;
     
-    @BeforeEach
-    void before() {
-        node = new DockerNode();
-
-        alice = new Account(node, 10_00000000L);
-        bob = new Account(node);
+    @Test
+    void canSendSmartAsset() {
+        alice = new Account(10_00000000L);
+        bob = new Account();
         
         assetId = alice.issues(a -> a
                 .name("My Asset")
                 .quantity(100)
                 .script("2 * 2 == 4")
         ).getId().toString();
-    }
-    
-    @Test
-    void canSendSmartAsset() {
+
         alice.transfers(t -> t
                 .to(bob)
                 .amount(42)
@@ -137,17 +124,12 @@ class FirstTest {
         
         assertEquals(42, bob.balance(assetId));
     }
-    
-    @AfterEach
-    void after() {
-        node.shutdown();
-    }
 }
 ```
 
 ## Жизненный цикл теста
 
-Paddle не зависит от тестового фреймворка. Вы можете использовать Paddle совместно с JUnit, TestNG или любым другим фреймворком.
+Paddle не зависит от тестового фреймворка. Вы можете использовать Paddle как самостоятельно, так и совместно с JUnit, TestNG или любым другим фреймворком.
 
 В любом случае, тест будет состоять из следующих шагов:
 1. запустить ноду или подключиться к существующей;
@@ -156,87 +138,100 @@ Paddle не зависит от тестового фреймворка. Вы м
 4. выполнить проверки;
 5. выключить ноду, если была запущена на шаге 1.
 
-## Тестовое окружение
+Шаги 1 и 5 Paddle выполнит автоматически.
 
-Для выполнения тестовых сценариев необходима нода Waves.
-Paddle может автоматически запустить ноду в Docker или подключиться к заданной работающей ноде.
+## Настройка Paddle
+
+Для выполнения тестовых сценариев необходима нода Waves.\
+По умолчанию Paddle автоматически запускает ноду в Docker, но вместо этого можно подключиться к какой-то уже работающей ноде.\
+
+Поведение Paddle определяется параметрами выбранного профиля, которые можно объявить в файле `paddle.conf`.\
+Файл `paddle.conf` можно создать или в корне проекта, или в папке `resources`.
+
+### Преднастроенные профили
+
+У Paddle есть [преднастроенные профили](src/main/resources/reference.conf), которых хватает для большинства задач:
+* `docker` - профиль по умолчанию. Paddle запустит локальную ноду на порту `6869` и выключит её по завершению тестов.\
+Используется [официальный образ приватной ноды Waves](https://hub.docker.com/r/wavesplatform/waves-private-node)
+с чистым блокчейном и более быстрой генерацией блоков, чем в мейннете или тестнете. Это позволяет выполнять тесты гораздо быстрее.
+* `local` - Paddle подключится к локальной ноде. Например, если контейнер с нодой уже запущен вручную.
+* `stagenet`, `testnet`, `mainnet` - Paddle подключится к ноде соответствующей сети Waves.\
+Дополнительно необходимо указать seed аккаунта, с которого будут браться Waves для отправки транзакций. Это можно сделать через команду запуска:\
+`mvn test -Dpaddle.env=testnet "-Dpaddle.envs.testnet.faucet-seed=some seed text"`\
+или указать seed в файле `paddle.conf`:
+```hocon
+paddle.env = testnet
+paddle.envs.testnet.faucet-seed = some seed text
+```
+
+### Пользовательские профили
+
+В `paddle.conf` можно создавать и собственные профили:
+```hocon
+paddle.env = my-profile
+paddle.envs.my-profile {
+    api-url = "http://localhost:8080/"
+    chain-id = D
+    faucet-seed = some seed text
+}
+paddle.envs.my-docker-profile = ${paddle.envs.my-profile} {
+    docker-image = "my-custom-image:latest"
+    faucet-seed = another seed text
+    auto-shutdown = true
+}
+```
+
+В этом примере при использовании `my-profile` Paddle подключится к уже работающей локальной ноде.
+А при `my-docker-profile` Paddle запустит ноду в контейнере, т.к. указано поле `docker-image`.
+
+`${paddle.envs.my-profile}` означает, что профиль `my-docker-profile` отнаследован от профиля `my-profile` с дополнительными параметрами.
+
+**Важно!** Если вы используете другой Docker образ, то убедитесь, что у него открыт порт `6869` для доступа к REST API ноды.
 
 ### Запуск ноды в Docker
 
-#### Официальный Docker образ
-
-По умолчанию Paddle предлагает выполнять тесты локально в автоматически создаваемом окружении.
-
-Чтобы запустить ноду в Docker, нужно выполнить:
-
+Если выбран профиль `docker`, то для запуска контейнера с нодой достаточно создать аккаунт или обратиться к инстансу ноды:
 ```java
-DockerNode node = new DockerNode();
+import im.mak.paddle.Account;
+import static im.mak.paddle.Node.node;
+
+Account alice = new Account(100_00000000); // аккаунт с начальным балансом
+// ИЛИ
+node().height();
 ```
+При первом же обращении к ноде она будет запущена автоматически.
 
-И всё! Paddle использует [официальный образ приватной ноды Waves](https://hub.docker.com/r/wavesplatform/waves-private-node) с чистым блокчейном и более быстрой генерацией блоков, чем в мейннет или тестнет. Это позволяет выполнять тесты гораздо быстрее.
+Для Paddle необходим аккаунт `faucet` - к нему можно обратиться через поле `node().faucet()` объекта `Node`.\
+Аккаунт `faucet` используется как "банк" для других тестовых аккаунтов.
+Когда в тесте создается новый аккаунт, его стартовый баланс пополняется переводом токенов Waves именно с `faucet` аккаунта.
 
-Если на машине установлен Docker, но нет образа ноды, то Paddle скачает его автоматически!
+Paddle старается самостоятельно выключать контейнер ноды по окончанию программы. Но если ваша программа была экстренно прервана, то контейнер скорее всего останется работать, и его придется выключить самостоятельно.
 
-На момент старта ноды все токены Waves лежат на специальном аккаунте `rich`.\
-К этому аккаунту можно обратиться через поле `node.rich` объекта `Node`. Аккаунт `rich` используется как "банк" для других тестовых аккаунтов.\
-Когда в тесте создается новый аккаунт, его стартовый баланс пополняется переводом токенов Waves именно с `rich` аккаунта.
+## Объект Node
 
-**Важно!** Не забывайте выключать контейнер ноды после выполнения тестов, иначе это помешает их следующему запуску:
-
-```java
-node.shutdown();
-```
-
-#### Произвольный Docker образ ноды
-
-Если необходимо, Paddle позволяет запускать ноду из произвольного образа Docker:
-
-```java
-DockerNode node = new DockerNode(image, tag, apiPort, chainId, richSeedPhrase);
-```
-
-**Важно!** На данный момент требуется, чтобы образ открывал порт `6869` для доступа к REST API ноды.
-
-### Подключение к существующей ноде
-
-Paddle также позволяет подключиться к ноде в любой сети Waves: мейннет, тестнет или какой-то собственной.
-
-Для подключения необходимо сообщить URL ноды, букву сети и seed фразу для `rich` аккаунта:
-
-```java
-Node node = new Node("testnodes.wavesnodes.com", 'T', "your rich seed phrase");
-```
-
-**Важно!** Будьте осторожны при работе в мейннет! Ваши тесты могут потратить реальные деньги.
-
-### Методы объекта Node
-
-- `node.chainId()` - буква сети ноды;
-- `node.height()` - текущая высота блокчейна;
-- `node.compileScript()` - скомпилировать скрипт RIDE;
-- `node.isSmart(assetOrAddress)` - определить, является ли токен или аккаунт скриптованным;
-- `node.send(...)` - отправить транзакцию;
-- `node.api.assetDetails(assetId)` - информация о выпущенном токене;
-- `node.api.nft(address)` - список NFT на счету у аккаунта;
-- `node.api.stateChanges(invokeTxId)` - результат выполнения указанной InvokeScript транзакции.
+- `node().chainId()` - буква сети ноды;
+- `node().height()` - текущая высота блокчейна;
+- `node().compileScript()` - скомпилировать скрипт RIDE;
+- `node().isSmart(assetOrAddress)` - определить, является ли токен или аккаунт скриптованным;
+- `node().send(...)` - отправить транзакцию;
+- `node().api.assetDetails(assetId)` - информация о выпущенном токене;
+- `node().api.nft(address)` - список NFT на счету у аккаунта;
+- `node().api.stateChanges(invokeTxId)` - результат выполнения указанной InvokeScript транзакции.
 
 ## Аккаунт
 
-В Paddle объект `Account` это действующее лицо в тестовом сценарии. В нем есть информация о Waves аккаунте и он может отправлять транзакции.
+В Paddle объект `Account` это действующее лицо в тестовом сценарии. В нем есть вся информация о Waves аккаунте и он может отправлять транзакции.
 
 Чтобы создать аккаунт:
 
 ```java
-Account alice = new Account(node, 10_00000000L);
+Account alice = new Account(10_00000000L);
 ```
-
-В конструктор аккаунта необходимо передать объект ноды, на которую аккаунт будет отправлять транзакции и другие запросы.
 
 Опционально можно задать seed фразу для аккаунта, иначе она будет сгенерирована автоматически.
 
-Также опционально можно задать начальный баланс Waves, иначе аккаунт начнет работу с пустым кошельком.
-
-Технически, чтобы у аккаунта появился начальный баланс, `rich` аккаунт делает перевод токенов на этот аккаунт Transfer транзакцией.
+Также опционально можно задать начальный баланс Waves, иначе аккаунт начнет работу с пустым кошельком.\
+Технически, чтобы у аккаунта появился начальный баланс, `faucet` аккаунт делает перевод токенов на этот аккаунт Transfer транзакцией.
 
 ### Получение информации об аккаунте
 
@@ -330,7 +325,7 @@ assertEquals(1000, alice.balance(assetId));
 ```java
 String txId = bob.invokes(i -> i.dApp(alice)).getId().toString();
 
-StateChanges changes = node.api.stateChanges(txId);
+StateChanges changes = node().api.stateChanges(txId);
 
 assertAll(
     () -> assertEquals(1, changes.data.size()),
@@ -361,27 +356,27 @@ assertTrue(error.getMessage().contains("can accept payment in waves tokens only!
 
 Paddle позволяет ждать, пока высота блокчейна вырастет на заданное количество блоков:
 ```java
-node.waitNBlocks(2);
+node().waitNBlocks(2);
 ```
 или пока блокчейн достигнет конкретной высоты:
 ```java
-node.waitForHeight(100);
+node().waitForHeight(100);
 ```
 
-Оба метода используют "мягкие" ожидания. Это означает, что они продолжают ждать, пока высота растет с ожидаемой частотой. Ожидаемая частота задается свойством ноды `node.blockWaitingInSeconds`, но может быть изменена или переопределена вторым аргументом:
+Оба метода используют "мягкие" ожидания. Это означает, что они продолжают ждать, пока высота растет с ожидаемой частотой. Ожидаемая частота равна утроенному значению параметра `block-interval` в конфиге Paddle, но может быть изменена или переопределена вторым аргументом:
 ```java
-node.waitNBlocks(2, waitingInSeconds);
-node.waitForHeight(100, waitingInSeconds);
+node().waitNBlocks(2, waitingInSeconds);
+node().waitForHeight(100, waitingInSeconds);
 ```
 
 #### Транзакция в блокчейне
 
 Также Paddle позволяет ждать, пока транзакция с заданным id не попадет в блокчейн:
 ```java
-node.waitForTransaction(txId);
+node().waitForTransaction(txId);
 ```
 
-По умолчанию время ожидания транзакции задано в свойстве ноды `node.transactionWaitingInSeconds`, но может быть изменено или переопределено вторым аргументом:
+По умолчанию время ожидания транзакции равно значению параметра `block-interval` в конфиге Paddle, но может быть изменено или переопределено вторым аргументом:
 ```java
 node.waitForTransaction(txId, waitingInSeconds);
 ```
@@ -392,9 +387,9 @@ node.waitForTransaction(txId, waitingInSeconds);
 
 Например, по сценарию нужно создать несколько тестовых аккаунтов, и каждый из них должен выпустить свой токен:
 ```java
-Account alice = new Account(node, 1_00000000);
-Account bob = new Account(node, 1_00000000);
-Account carol = new Account(node, 1_00000000);
+Account alice = new Account(1_00000000);
+Account bob = new Account(1_00000000);
+Account carol = new Account(1_00000000);
 alice.issues(a -> a.name("Asset 1"));
 bob.issues(a -> a.name("Asset 2"));
 carol.issues(a -> a.name("Asset 3"));
@@ -403,13 +398,13 @@ carol.issues(a -> a.name("Asset 3"));
 ```java
 async(
     () -> {
-        Account alice = new Account(node, 1_00000000);
+        Account alice = new Account(1_00000000);
         alice.issues(a -> a.name("Asset 1"));
     }, () -> {
-        Account bob = new Account(node, 1_00000000);
+        Account bob = new Account(1_00000000);
         bob.issues(a -> a.name("Asset 2"));
     }, () -> {
-        Account carol = new Account(node, 1_00000000);
+        Account carol = new Account(1_00000000);
         carol.issues(a -> a.name("Asset 3"));
     }
 );
