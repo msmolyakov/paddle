@@ -157,11 +157,11 @@ It uses [the official image of private Waves node](https://hub.docker.com/r/wave
 * `local` - Paddle connects to existing local node. For example, if docker container with a node is already started manually.
 * `stagenet`, `testnet`, `mainnet` - Paddle connects to a node in the specified Waves network.\
 Additionally, you must specify the seed of account which Waves will be taken to send transactions. This can be done through the launch command:\
-`mvn test -Dpaddle.profile=testnet "-Dpaddle.profiles.testnet.faucet-seed=some seed text"`\
+`mvn test -Dpaddle.profile=testnet "-Dpaddle.testnet.faucet-seed=some seed text"`\
 or set the seed in the file `paddle.conf`:
 ```hocon
 paddle.profile = testnet
-paddle.profiles.testnet.faucet-seed = some seed text
+paddle.testnet.faucet-seed = some seed text
 ```
 
 ### Custom profiles
@@ -169,12 +169,12 @@ paddle.profiles.testnet.faucet-seed = some seed text
 In the `paddle.conf` you can create your own profiles:
 ```hocon
 paddle.profile = my-profile
-paddle.profiles.my-profile {
+paddle.my-profile {
     api-url = "http://localhost:8080/"
     chain-id = D
     faucet-seed = some seed text
 }
-paddle.profiles.my-docker-profile = ${paddle.profiles.my-profile} {
+paddle.my-docker-profile = ${paddle.my-profile} {
     docker-image = "my-custom-image:latest"
     faucet-seed = another seed text
     auto-shutdown = true
@@ -184,7 +184,7 @@ paddle.profiles.my-docker-profile = ${paddle.profiles.my-profile} {
 In this example, when using `my-profile`, Paddle will connect to an already running local node.\
 And with `my-docker-profile` Paddle will launch a node container, because the `docker-image` field is specified.
 
-`${paddle.profiles.my-profile}` means that `my-docker-profile` is inherited from the `my-profile` profile with additional parameters.
+`${paddle.my-profile}` means that `my-docker-profile` is inherited from the `my-profile` profile with additional parameters.
 
 **Note!** Your custom docker image must expose port `6869` for REST API.
 
