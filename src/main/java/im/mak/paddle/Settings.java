@@ -26,8 +26,8 @@ public class Settings {
                 .withFallback(ConfigFactory.load(base))
                 .withFallback(ConfigFactory.defaultReference());
 
-        name = overridden.getString("paddle.env");
-        _conf = overridden.getObject("paddle.envs." + name).toConfig();
+        name = overridden.getString("paddle.profile");
+        _conf = overridden.getObject("paddle.profiles." + name).toConfig();
 
         apiUrl = _conf.getString("api-url");
         chainId = _conf.getString("chain-id").charAt(0);

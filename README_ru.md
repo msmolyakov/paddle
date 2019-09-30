@@ -157,24 +157,24 @@ Paddle не зависит от тестового фреймворка. Вы м
 * `local` - Paddle подключится к локальной ноде. Например, если контейнер с нодой уже запущен вручную.
 * `stagenet`, `testnet`, `mainnet` - Paddle подключится к ноде соответствующей сети Waves.\
 Дополнительно необходимо указать seed аккаунта, с которого будут браться Waves для отправки транзакций. Это можно сделать через команду запуска:\
-`mvn test -Dpaddle.env=testnet "-Dpaddle.envs.testnet.faucet-seed=some seed text"`\
+`mvn test -Dpaddle.profile=testnet "-Dpaddle.profiles.testnet.faucet-seed=some seed text"`\
 или указать seed в файле `paddle.conf`:
 ```hocon
-paddle.env = testnet
-paddle.envs.testnet.faucet-seed = some seed text
+paddle.profile = testnet
+paddle.profiles.testnet.faucet-seed = some seed text
 ```
 
 ### Пользовательские профили
 
 В `paddle.conf` можно создавать и собственные профили:
 ```hocon
-paddle.env = my-profile
-paddle.envs.my-profile {
+paddle.profile = my-profile
+paddle.profiles.my-profile {
     api-url = "http://localhost:8080/"
     chain-id = D
     faucet-seed = some seed text
 }
-paddle.envs.my-docker-profile = ${paddle.envs.my-profile} {
+paddle.profiles.my-docker-profile = ${paddle.profiles.my-profile} {
     docker-image = "my-custom-image:latest"
     faucet-seed = another seed text
     auto-shutdown = true
@@ -184,7 +184,7 @@ paddle.envs.my-docker-profile = ${paddle.envs.my-profile} {
 В этом примере при использовании `my-profile` Paddle подключится к уже работающей локальной ноде.
 А при `my-docker-profile` Paddle запустит ноду в контейнере, т.к. указано поле `docker-image`.
 
-`${paddle.envs.my-profile}` означает, что профиль `my-docker-profile` отнаследован от профиля `my-profile` с дополнительными параметрами.
+`${paddle.profiles.my-profile}` означает, что профиль `my-docker-profile` отнаследован от профиля `my-profile` с дополнительными параметрами.
 
 **Важно!** Если вы используете другой Docker образ, то убедитесь, что у него открыт порт `6869` для доступа к REST API ноды.
 
