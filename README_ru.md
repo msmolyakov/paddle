@@ -103,13 +103,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class FirstTest {
 
     private Account alice, bob;
+    private String assetId;
     
     @Test
     void canSendSmartAsset() {
         alice = new Account(10_00000000L);
         bob = new Account();
         
-        String assetId = alice.issues(a -> a
+        assetId = alice.issues(a -> a
                 .name("My Asset")
                 .quantity(100)
                 .script("2 * 2 == 4")
@@ -175,6 +176,7 @@ paddle.envs.my-profile {
 }
 paddle.envs.my-docker-profile = ${paddle.envs.my-profile} {
     docker-image = "my-custom-image:latest"
+    faucet-seed = another seed text
     auto-shutdown = true
 }
 ```
@@ -182,8 +184,7 @@ paddle.envs.my-docker-profile = ${paddle.envs.my-profile} {
 В этом примере при использовании `my-profile` Paddle подключится к уже работающей локальной ноде.
 А при `my-docker-profile` Paddle запустит ноду в контейнере, т.к. указано поле `docker-image`.
 
-`${paddle.envs.my-profile}` означает, что для подключения к ноде Paddle будет использовать настройки, указанные в профиле `my-profile`.
-Читать как "профиль my-docker-profile отнаследован от профиля my-profile с дополнительными параметрами".
+`${paddle.envs.my-profile}` означает, что профиль `my-docker-profile` отнаследован от профиля `my-profile` с дополнительными параметрами.
 
 **Важно!** Если вы используете другой Docker образ, то убедитесь, что у него открыт порт `6869` для доступа к REST API ноды.
 

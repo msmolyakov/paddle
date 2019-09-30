@@ -14,10 +14,11 @@ Paddle is a Java library to write tests for your dApps and other smart contracts
   - [Simple usage](#simple-usage)
   - [Example with JUnit 5](#example-with-junit-5)
 - [Test lifecycle](#test-lifecycle)
-- [Test environment](#test-environment)
+- [Paddle configuration](#paddle-configuration)
+  - [Pre-configured profiles](#pre-configured-profiles)
+  - [Custom profiles](#custom-profiles)
   - [Run node in Docker](#run-node-in-docker)
-  - [Connect to existing Waves node](#connect-to-existing-waves-node)
-  - [Methods of Node instance](#methods-of-node-instance)
+- [Node instance](node-instance)
 - [Account](#account)
   - [Retrieving information about account](#retrieving-information-about-account)
   - [Signing data and sending transactions](#signing-data-and-sending-transactions)
@@ -72,27 +73,23 @@ compile("im.mak:paddle:0.4.1")
 
 ```java
 import im.mak.paddle.Account;
-import im.mak.paddle.DockerNode;
-
 public class Main {
-
     public static void main(String[] args) {
 
-        // Download and run docker node
-        DockerNode node = new DockerNode();
+        // Create two accounts.
+        // At the time of creation first account,
+        // Paddle automatically downloaded and started Waves Node in Docker container!
+        Account alice = new Account(10_00000000); // account with 10 Waves
+        Account bob = new Account();              // account with no Waves
 
-        // Create two accounts
-        Account alice = new Account(node, 10_00000000); // account with 10 Waves
-        Account bob = new Account(node);                // account with no Waves
-
-        // Send 3 Waves to Bob and wait until the Transfer transaction appears in blockchain
+        // Alice sends 3 Waves to Bob
+        // Paddle waits until the Transfer transaction appears in blockchain
         alice.transfers(t -> t.to(bob).amount(3_00000000));
 
         System.out.println( bob.balance() ); // 300000000
         
-        node.shutdown();
+        // When the program ends, Paddle will automatically turn off the Docker container
     }
-
 }
 ```
 
@@ -100,33 +97,26 @@ public class Main {
 
 ```java
 import im.mak.paddle.Account;
-import im.mak.paddle.DockerNode;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class FirstTest {
 
-    private DockerNode node;
     private Account alice, bob;
     private String assetId;
-    
-    @BeforeEach
-    void before() {
-        node = new DockerNode();
 
-        alice = new Account(node, 10_00000000L);
-        bob = new Account(node);
-        
+    @Test
+    void canSendSmartAsset() {
+        alice = new Account(10_00000000L);
+        bob = new Account();
+
         assetId = alice.issues(a -> a
                 .name("My Asset")
                 .quantity(100)
                 .script("2 * 2 == 4")
         ).getId().toString();
-    }
-    
-    @Test
-    void canSendSmartAsset() {
+
         alice.transfers(t -> t
                 .to(bob)
                 .amount(42)
@@ -135,17 +125,12 @@ class FirstTest {
         
         assertEquals(42, bob.balance(assetId));
     }
-    
-    @AfterEach
-    void after() {
-        node.shutdown();
-    }
 }
 ```
 
 ## Test lifecycle
 
-Paddle is framework agnostic, i.e. Paddle could be used with JUnit, TestNG or any other test framework familiar to you.
+Paddle is framework agnostic, i.e. Paddle can be used independently, or with JUnit, TestNG and any other test framework familiar to you.
 
 But in general, any test consists of the following steps:
 1. run or connect to node;
@@ -154,86 +139,101 @@ But in general, any test consists of the following steps:
 4. perform assertions;
 5. shutdown docker node, if it's been used in step 1.
 
-## Test environment
+Steps 1 and 5 are performed automatically by Paddle.
+
+## Paddle configuration
 
 Paddle needs some Waves node to execute test scenarios.
-It can run node in Docker automatically or connect to any other already running node.
+By default, Paddle starts a node in a Docker container, but it's possible to connect to any existing node.
+
+The behaviour is set by parameters of selected profile, which can be declared in `paddle.conf` file.\
+The file `paddle.conf` can be created either in the project root or in the `resources` folder.
+
+### Pre-configured profiles
+
+Paddle has [predefined profiles](src/main/resources/reference.conf), that are enough for most purposes:
+* `docker` - default profile. Paddle starts local node on port `6869` and turns it down when tests are complete.\
+It uses [the official image of private Waves node](https://hub.docker.com/r/wavesplatform/waves-private-node) with clean blockchain and most frequent blocks generation. It allows to run your tests faster than in the Testnet or Mainnet.
+* `local` - Paddle connects to existing local node. For example, if docker container with a node is already started manually.
+* `stagenet`, `testnet`, `mainnet` - Paddle connects to a node in the specified Waves network.\
+Additionally, you must specify the seed of account which Waves will be taken to send transactions. This can be done through the launch command:\
+`mvn test -Dpaddle.env=testnet "-Dpaddle.envs.testnet.faucet-seed=some seed text"`\
+or set the seed in the file `paddle.conf`:
+```hocon
+paddle.env = testnet
+paddle.envs.testnet.faucet-seed = some seed text
+```
+
+### Custom profiles
+
+In the `paddle.conf` you can create your own profiles:
+```hocon
+paddle.env = my-profile
+paddle.envs.my-profile {
+    api-url = "http://localhost:8080/"
+    chain-id = D
+    faucet-seed = some seed text
+}
+paddle.envs.my-docker-profile = ${paddle.envs.my-profile} {
+    docker-image = "my-custom-image:latest"
+    faucet-seed = another seed text
+    auto-shutdown = true
+}
+```
+
+In this example, when using `my-profile`, Paddle will connect to an already running local node.\
+And with `my-docker-profile` Paddle will launch a node container, because the `docker-image` field is specified.
+
+`${paddle.envs.my-profile}` means that `my-docker-profile` is inherited from the `my-profile` profile with additional parameters.
+
+**Note!** Your custom docker image must expose port `6869` for REST API.
 
 ### Run node in Docker
 
 #### Default official image
 
-By default, Paddle proposes to run tests locally in automatically configured environment.
-
-To run docker node:
-
+If the `docker` profile is selected, then to start the node, just create an account or refer to the node instance:
 ```java
-DockerNode node = new DockerNode();
+import im.mak.paddle.Account;
+import static im.mak.paddle.Node.node;
+
+Account alice = new Account(100_00000000); // account with initial balance
+// OR
+node().height();
 ```
+Paddle will start the node automatically!
 
-That's it! It uses [the official image of private Waves node](https://hub.docker.com/r/wavesplatform/waves-private-node) with clean blockchain and most frequent blocks generation. It allows to run your tests faster than in the Testnet or Mainnet.
+Paddle requires a `faucet` account - this account is available as `node().faucet()` field of the Node instance.\
+It's used as a bank for initial balances of other test accounts.
+When creating any new account, Waves tokens for its initial balance are transferred from the `faucet` account.
 
-If you don't have the docker image, Paddle will download it automatically!
+Paddle turns off the node container itself when all tests are finished.
+But if tests are interrupted urgently, then the container will most likely remain working, and you will have to turn it off yourself.
 
-At start, all Waves tokens are distributed to the special account named "rich".\
-This account is available as `node.rich` field and it's used as a bank for initial balances of other test accounts.\
-When creating any account, Waves tokens for its initial balance are transferred from the rich account.
+## Node instance
 
-**Note!** Don't forget shutdown node after test run:
-
-```java
-node.shutdown();
-```
-
-#### Custom Docker image
-
-If you wish to use some custom docker image of Waves node, Paddle allows to do it:
-
-```java
-DockerNode node = new DockerNode(image, tag, apiPort, chainId, richSeedPhrase);
-```
-
-**Note!** For now custom image must expose port `6869` for REST API.
-
-### Connect to existing Waves node
-
-Paddle also can connect to running nodes of any Waves blockchain: mainnet, testnet or any custom.
-
-To connect to node just provide node address, chain Id and seed phrase of rich account:
-
-```java
-Node node = new Node("testnodes.wavesnodes.com", 'T', "your rich seed phrase");
-```
-
-**Note!** Be aware in production networks like Mainnet! Your tests will spend your real money.
-
-### Methods of Node instance
-
-- `node.chainId()` - chain id of used blockchain;
-- `node.height()` - current height of blockchain;
-- `node.compileScript()` - compile RIDE script;
-- `node.isSmart(assetOrAddress)` - returns true if asset or account is scripted;
-- `node.send(...)` - send transaction;
-- `node.api.assetDetails(assetId)` - information about issued asset;
-- `node.api.nft(address)` - list of NFT for specified account;
-- `node.api.stateChanges(invokeTxId)` - result of specified InvokeScript transaction.
+- `node().chainId()` - chain id of used blockchain;
+- `node().height()` - current height of blockchain;
+- `node().compileScript()` - compile RIDE script;
+- `node().isSmart(assetOrAddress)` - returns true if asset or account is scripted;
+- `node().send(...)` - send transaction;
+- `node().api.assetDetails(assetId)` - information about issued asset;
+- `node().api.nft(address)` - list of NFT for specified account;
+- `node().api.stateChanges(invokeTxId)` - result of specified InvokeScript transaction.
 
 ## Account
 
-In Paddle, Account is an actor of your test. It has information about Waves account and can send transactions.
+In Paddle, Account is an actor of your test. It has all the Waves account information and can send transactions.
 
 To create new account:
 
 ```java
-Account alice = new Account(node, 10_00000000L);
+Account alice = new Account(10_00000000L);
 ```
-
-Definition of test account requires Node instance, where it will send all transactions and other requests.
 
 Optionally, you can specify seed phrase, otherwise it will be randomly generated.
 
-Also optionally, you can set initial Waves balance, otherwise account will not have Waves tokens at start.
-
+Also optionally, you can set initial Waves balance, otherwise account will not have Waves tokens at start.\
 Technically, when you specify initial balance, "rich" account sends Transfer transaction to the created account.
 
 ### Retrieving information about account
@@ -328,7 +328,7 @@ If connected node stores state changes of InvokeScript transactions (depends of 
 ```java
 String txId = bob.invokes(i -> i.dApp(alice)).getId().toString();
 
-StateChanges changes = node.api.stateChanges(txId);
+StateChanges changes = node().api.stateChanges(txId);
 
 assertAll(
     () -> assertEquals(1, changes.data.size()),
@@ -359,26 +359,26 @@ assertTrue(error.getMessage().contains("can accept payment in waves tokens only!
 
 Paddle allows to wait for the growth of the height of N blocks
 ```java
-node.waitNBlocks(2);
+node().waitNBlocks(2);
 ```
 or until the height of the blockchain reaches the specified
 ```java
-node.waitForHeight(100);
+node().waitForHeight(100);
 ```
 
-The both methods have "soft" timeouts. This means that they continue to wait until the height rises with the expected frequency. The expected frequency is value of `node.blockWaitingInSeconds` but can be redefined by optional argument:
+The both methods have "soft" timeouts. This means that they continue to wait until the height rises with the expected frequency. The expected frequency is a triple value of the `block-interval` field in Paddle config file, but can be redefined by optional argument:
 ```java
-node.waitNBlocks(2, waitingInSeconds);
-node.waitForHeight(100, waitingInSeconds);
+node().waitNBlocks(2, waitingInSeconds);
+node().waitForHeight(100, waitingInSeconds);
 ```
 
 #### Transaction
 
 Also Paddle can wait until transaction with specified id is in blockchain:
 ```java
-node.waitForTransaction(txId);
+node().waitForTransaction(txId);
 ```
-It has default timeout in `node.transactionWaitingInSeconds` and can be redefined by optional argument.
+The timeout value is specified in `block-interval` field in Paddle config file, but can be redefined by optional argument.
 
 ### Asynchronous actions
 
@@ -386,9 +386,9 @@ To save execution time (or for other reasons in specific cases) it would be grea
 
 For example, we want create some test account and each of them will issue asset:
 ```java
-Account alice = new Account(node, 1_00000000);
-Account bob = new Account(node, 1_00000000);
-Account carol = new Account(node, 1_00000000);
+Account alice = new Account(1_00000000);
+Account bob = new Account(1_00000000);
+Account carol = new Account(1_00000000);
 alice.issues(a -> a.name("Asset 1"));
 bob.issues(a -> a.name("Asset 2"));
 carol.issues(a -> a.name("Asset 3"));
@@ -397,13 +397,13 @@ These 6 transactions will be sent consecutively. But with `Async.async()` their 
 ```java
 async(
     () -> {
-        Account alice = new Account(node, 1_00000000);
+        Account alice = new Account(1_00000000);
         alice.issues(a -> a.name("Asset 1"));
     }, () -> {
-        Account bob = new Account(node, 1_00000000);
+        Account bob = new Account(1_00000000);
         bob.issues(a -> a.name("Asset 2"));
     }, () -> {
-        Account carol = new Account(node, 1_00000000);
+        Account carol = new Account(1_00000000);
         carol.issues(a -> a.name("Asset 3"));
     }
 );
