@@ -1,7 +1,6 @@
 package im.mak.paddle.crypto;
 
 import im.mak.paddle.Account;
-import im.mak.paddle.util.crypto.Rsa;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
