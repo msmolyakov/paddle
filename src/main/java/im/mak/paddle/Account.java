@@ -1,5 +1,6 @@
 package im.mak.paddle;
 
+import com.wavesplatform.wavesj.Base58;
 import com.wavesplatform.wavesj.ByteString;
 import com.wavesplatform.wavesj.DataEntry;
 import com.wavesplatform.wavesj.PrivateKeyAccount;
@@ -7,6 +8,8 @@ import com.wavesplatform.wavesj.transactions.*;
 import im.mak.paddle.actions.*;
 import im.mak.paddle.api.deser.transactions.IssueTx;
 import im.mak.paddle.api.deser.ScriptInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.UUID;
@@ -19,6 +22,8 @@ public class Account {
     public PrivateKeyAccount wavesAccount;
     private String seedText;
 
+    static final Logger log = LoggerFactory.getLogger(Account.class);
+
     public Account(String seedText, long initWavesBalance) {
         this.seedText = seedText;
         wavesAccount = PrivateKeyAccount.fromSeed(this.seedText, 0, node().chainId());
@@ -26,6 +31,12 @@ public class Account {
         if (initWavesBalance > 0) {
             node().faucet().transfers(t -> t.amount(initWavesBalance).to(this));
         }
+        //TODO singleton counter for names
+        if (!seed().equals(new Settings().faucetSeed))
+            log.info("New account: {\n\taddress: \"{}\",\n\tbalance: {},\n\tpublicKey: \"{}\"," +
+                            "\n\tprivateKey: \"{}\",\n\tencodedSeed: \"{}\" }",
+                    address(), balance(), Base58.encode(publicKey()), Base58.encode(privateKey()),
+                    Base58.encode(seed().getBytes()));
     }
 
     public Account(String seedText) {

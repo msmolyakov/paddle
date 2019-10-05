@@ -15,6 +15,8 @@ import com.wavesplatform.wavesj.transactions.*;
 import im.mak.paddle.actions.*;
 import im.mak.paddle.api.Api;
 import im.mak.paddle.exceptions.NodeError;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -44,8 +46,13 @@ public class Node {
 
     public Api api;
 
+    static final Logger log = LoggerFactory.getLogger(Node.class);
+
     private Node() {
         conf = new Settings();
+        log.info("Paddle settings: {\n\tprofile: \"{}\",\n\tapiUrl: \"{}\",\n\tchainId: \"{}\",\n\tblockInterval: {}," +
+                        "\n\tdockerImage: \"{}\",\n\tautoShutdown: {} }",
+                conf.name, conf.apiUrl, conf.chainId, conf.blockInterval, conf.dockerImage, conf.autoShutdown);
 
         try {
             this.wavesNode = new com.wavesplatform.wavesj.Node(conf.apiUrl, conf.chainId);
@@ -55,6 +62,7 @@ public class Node {
         }
 
         if (conf.dockerImage != null) {
+            log.info("Starting the node from docker image");
             DockerClient docker;
             String containerId;
             try {
@@ -105,6 +113,8 @@ public class Node {
                         }
                     } catch (DockerException | InterruptedException e) { e.printStackTrace(); }
                 }));
+
+            log.info("Docker container id: {}", containerId);
         }
     }
 
@@ -181,9 +191,10 @@ public class Node {
 
     public IssueTransaction send(Issue issue) {
         try {
-            return (IssueTransaction) waitForTransaction(wavesNode.issueAsset(issue.sender.wavesAccount,
+            IssueTransaction tx = (IssueTransaction) waitForTransaction(wavesNode.issueAsset(issue.sender.wavesAccount,
                     this.chainId(), issue.name, issue.description, issue.quantity, issue.decimals,
                     issue.isReissuable, issue.compiledScript, issue.calcFee()));
+            return tx;
         } catch (IOException e) {
             throw new NodeError(e);
         }
@@ -314,9 +325,11 @@ public class Node {
 
     public InvokeScriptTransaction send(InvokeScript invoke) {
         try {
-            return (InvokeScriptTransaction) waitForTransaction(wavesNode.invokeScript(
+            InvokeScriptTransaction tx = (InvokeScriptTransaction) waitForTransaction(wavesNode.invokeScript(
                     invoke.sender.wavesAccount, this.chainId(),
                     invoke.dApp, invoke.call, invoke.payments, invoke.calcFee(), invoke.feeAssetId));
+            log.info("{} called function \"{}\" at dApp {}", invoke.sender.address(), invoke.call.getName(), invoke.dApp);
+            return tx;
         } catch (IOException e) {
             throw new NodeError(e);
         }
