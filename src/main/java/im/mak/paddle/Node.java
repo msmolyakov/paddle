@@ -104,6 +104,7 @@ public class Node {
 
             if (conf.autoShutdown)
                 Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                    log.info("Stopping the node");
                     try {
                         if (docker != null
                                 && docker.listContainers().stream().anyMatch(c -> c.id().equals(containerId))) {
