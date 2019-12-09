@@ -44,7 +44,6 @@ public class SetAssetScript implements Action {
         } else {
             long totalFee = ONE_WAVES;
             totalFee += sender.isSmart() ? EXTRA_FEE : 0;
-            totalFee += node().isSmart(assetId) ? EXTRA_FEE : 0;
             return totalFee;
         }
     }
