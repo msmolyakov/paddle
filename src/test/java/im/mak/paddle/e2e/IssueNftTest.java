@@ -1,6 +1,7 @@
 package im.mak.paddle.e2e;
 
 import im.mak.paddle.Account;
+import im.mak.waves.transactions.common.AssetId;
 import org.junit.jupiter.api.*;
 
 import static im.mak.paddle.Constants.MIN_FEE;
@@ -19,19 +20,19 @@ class IssueNftTest {
 
     @Test
     void canIssueNft() {
-        long initBalance = alice.balance();
+        long initBalance = alice.getWavesBalance();
 
-        String nftId = alice.issuesNft(i -> i.name("My NFT").description("My first NFT").script("true"))
-                .getId().toString();
+        AssetId nftId = alice.issueNft(i -> i.name("My NFT").description("My first NFT").script("true"))
+                .tx().assetId();
 
-        alice.transfers(t -> t.to(bob).amount(1).asset(nftId));
+        alice.transfer(t -> t.to(bob).amount(1, nftId));
 
         assertAll("balances",
-                () -> assertThat(alice.balance()).isEqualTo(initBalance - MIN_FEE * 6),
-                () -> assertThat(alice.balance(nftId)).isEqualTo(0),
+                () -> assertThat(alice.getWavesBalance()).isEqualTo(initBalance - MIN_FEE * 6),
+                () -> assertThat(alice.getAssetBalance(nftId)).isEqualTo(0),
 
-                () -> assertThat(bob.balance(nftId)).isEqualTo(1),
-                () -> assertThat(bob.nft()).hasSize(1)
+                () -> assertThat(bob.getAssetBalance(nftId)).isEqualTo(1),
+                () -> assertThat(bob.getNft()).hasSize(1)
         );
     }
 

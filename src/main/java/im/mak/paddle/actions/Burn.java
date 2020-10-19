@@ -1,54 +1,43 @@
 package im.mak.paddle.actions;
 
+import com.wavesplatform.wavesj.exceptions.NodeException;
 import im.mak.paddle.Account;
+import im.mak.waves.transactions.BurnTransaction;
+import im.mak.waves.transactions.common.AssetId;
+
+import java.io.IOException;
 
 import static im.mak.paddle.Constants.EXTRA_FEE;
-import static im.mak.paddle.Constants.MIN_FEE;
 import static im.mak.paddle.Node.node;
 
-public class Burn implements Action {
+public class Burn extends Action<Burn> {
 
-    public Account sender;
-    public String assetId;
-    public long quantity;
-    public long fee;
+    public AssetId assetId;
+    public long amount;
 
-    public Burn(Account from) {
-        this.sender = from;
+    public Burn(Account sender) {
+        super(sender, BurnTransaction.MIN_FEE);
 
-        this.quantity = 0;
-        this.fee = 0;
+        this.amount = 0;
     }
 
-    public static Burn burn(Account from) {
-        return new Burn(from);
-    }
-
-    public Burn asset(String assetId) {
+    public Burn assetId(AssetId assetId) {
         this.assetId = assetId;
         return this;
     }
 
-    public Burn quantity(long quantity) {
-        this.quantity = quantity;
-        return this;
-    }
-
-    public Burn fee(long fee) {
-        this.fee = fee;
+    public Burn amount(long amount) {
+        this.amount = amount;
         return this;
     }
 
     @Override
     public long calcFee() {
-        if (this.fee > 0) {
-            return this.fee;
-        } else {
-            long totalFee = MIN_FEE;
-            totalFee += sender.isSmart() ? EXTRA_FEE : 0;
-            totalFee += node().isSmart(assetId) ? EXTRA_FEE : 0;
-            return totalFee;
-        }
+        if (feeAmount > 0)
+            return feeAmount;
+
+        long extraFee = node().getAssetDetails(assetId).isScripted() ? EXTRA_FEE : 0;
+        return super.calcFee() + extraFee;
     }
 
 }

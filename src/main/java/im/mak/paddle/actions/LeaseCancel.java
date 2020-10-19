@@ -1,44 +1,20 @@
 package im.mak.paddle.actions;
 
 import im.mak.paddle.Account;
+import im.mak.waves.transactions.LeaseCancelTransaction;
+import im.mak.waves.transactions.common.Id;
 
-import static im.mak.paddle.Constants.EXTRA_FEE;
-import static im.mak.paddle.Constants.MIN_FEE;
+public class LeaseCancel extends Action<LeaseCancel> {
 
-public class LeaseCancel implements Action {
+    public Id leaseId;
 
-    public String leaseId;
-    public Account sender;
-    public long fee;
-
-    public LeaseCancel(Account from) {
-        this.sender = from;
-        this.fee = 0;
+    public LeaseCancel(Account sender) {
+        super(sender, LeaseCancelTransaction.MIN_FEE);
     }
 
-    public static LeaseCancel leaseCancel(Account from) {
-        return new LeaseCancel(from);
-    }
-
-    public LeaseCancel leaseId(String leaseId) {
+    public LeaseCancel leaseId(Id leaseId) {
         this.leaseId = leaseId;
         return this;
-    }
-
-    public LeaseCancel fee(long fee) {
-        this.fee = fee;
-        return this;
-    }
-
-    @Override
-    public long calcFee() {
-        if (this.fee > 0) {
-            return this.fee;
-        } else {
-            long totalFee = MIN_FEE;
-            totalFee += sender.isSmart() ? EXTRA_FEE : 0;
-            return totalFee;
-        }
     }
 
 }

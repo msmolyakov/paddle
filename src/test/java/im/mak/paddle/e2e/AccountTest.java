@@ -1,13 +1,12 @@
 package im.mak.paddle.e2e;
 
-import com.wavesplatform.wavesj.Base58;
-import com.wavesplatform.wavesj.DataEntry;
 import im.mak.paddle.Account;
+import im.mak.waves.transactions.common.Base64String;
+import im.mak.waves.transactions.data.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static im.mak.paddle.Async.async;
-import static im.mak.paddle.actions.data.Entry.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
@@ -25,50 +24,50 @@ class AccountTest {
 
     @Test
     void dataStorage() {
-        byte[] binary = "hello".getBytes();
+        Base64String binary = new Base64String("hello".getBytes());
 
         async(
-                () -> alice.writes(d -> d
+                () -> alice.writeData(d -> d
                         .binary("bin", binary)
                         .bool("bool1", true)
                         .bool("bool2", false)
                         .integer("int", 100500)
                         .string("str", "привёт")
                 ),
-                () -> bob.writes(d -> d
+                () -> bob.writeData(d -> d
                         .data(
-                                binary("bin", binary),
-                                bool("bool1", true),
-                                bool("bool2", false),
-                                integer("int", 100500),
-                                string("str", "привёт")
+                                BinaryEntry.as("bin", binary),
+                                BooleanEntry.as("bool1", true),
+                                BooleanEntry.as("bool2", false),
+                                IntegerEntry.as("int", 100500),
+                                StringEntry.as("str", "привёт")
                         ))
         );
 
-        DataEntry dataBin = alice.data().stream().filter(d -> d.getKey().equals("bin")).findFirst().get();
-        DataEntry dataBool1 = alice.data().stream().filter(d -> d.getKey().equals("bool1")).findFirst().get();
-        DataEntry dataBool2 = alice.data().stream().filter(d -> d.getKey().equals("bool2")).findFirst().get();
-        DataEntry dataInt = alice.data().stream().filter(d -> d.getKey().equals("int")).findFirst().get();
-        DataEntry dataStr = alice.data().stream().filter(d -> d.getKey().equals("str")).findFirst().get();
+        BinaryEntry dataBin = (BinaryEntry) alice.getData().stream().filter(d -> d.key().equals("bin")).findFirst().get();
+        BooleanEntry dataBool1 = (BooleanEntry) alice.getData().stream().filter(d -> d.key().equals("bool1")).findFirst().get();
+        BooleanEntry dataBool2 = (BooleanEntry) alice.getData().stream().filter(d -> d.key().equals("bool2")).findFirst().get();
+        IntegerEntry dataInt = (IntegerEntry) alice.getData().stream().filter(d -> d.key().equals("int")).findFirst().get();
+        StringEntry dataStr = (StringEntry) alice.getData().stream().filter(d -> d.key().equals("str")).findFirst().get();
 
         assertAll(
-                () -> assertThat(Base58.decode(dataBin.getValue().toString())).isEqualTo(binary),
-                () -> assertThat((boolean) dataBool1.getValue()).isTrue(),
-                () -> assertThat((boolean) dataBool2.getValue()).isFalse(),
-                () -> assertThat((long) dataInt.getValue()).isEqualTo(100500),
-                () -> assertThat(dataStr.getValue().toString()).isEqualTo("привёт"),
+                () -> assertThat(dataBin.value()).isEqualTo(binary),
+                () -> assertThat(dataBool1.value()).isTrue(),
+                () -> assertThat(dataBool2.value()).isFalse(),
+                () -> assertThat(dataInt.value()).isEqualTo(100500),
+                () -> assertThat(dataStr.value()).isEqualTo("привёт"),
 
-                () -> assertThat(alice.dataBin("bin")).isEqualTo(binary),
-                () -> assertThat(alice.dataBool("bool1")).isTrue(),
-                () -> assertThat(alice.dataBool("bool2")).isFalse(),
-                () -> assertThat(alice.dataInt("int")).isEqualTo(100500),
-                () -> assertThat(alice.dataStr("str")).isEqualTo("привёт"),
+                () -> assertThat(alice.getBinaryData("bin")).isEqualTo(binary),
+                () -> assertThat(alice.getBooleanData("bool1")).isTrue(),
+                () -> assertThat(alice.getBooleanData("bool2")).isFalse(),
+                () -> assertThat(alice.getIntegerData("int")).isEqualTo(100500),
+                () -> assertThat(alice.getStringData("str")).isEqualTo("привёт"),
 
-                () -> assertThat(bob.dataBin("bin")).isEqualTo(binary),
-                () -> assertThat(bob.dataBool("bool1")).isTrue(),
-                () -> assertThat(bob.dataBool("bool2")).isFalse(),
-                () -> assertThat(bob.dataInt("int")).isEqualTo(100500),
-                () -> assertThat(bob.dataStr("str")).isEqualTo("привёт")
+                () -> assertThat(bob.getBinaryData("bin")).isEqualTo(binary),
+                () -> assertThat(bob.getBooleanData("bool1")).isTrue(),
+                () -> assertThat(bob.getBooleanData("bool2")).isFalse(),
+                () -> assertThat(bob.getIntegerData("int")).isEqualTo(100500),
+                () -> assertThat(bob.getStringData("str")).isEqualTo("привёт")
         );
     }
 

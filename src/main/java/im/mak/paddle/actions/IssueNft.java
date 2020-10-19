@@ -1,37 +1,26 @@
 package im.mak.paddle.actions;
 
+import com.wavesplatform.wavesj.exceptions.NodeException;
 import im.mak.paddle.Account;
+import im.mak.waves.transactions.IssueTransaction;
+import im.mak.waves.transactions.common.Base64String;
 
+import java.io.IOException;
 import java.util.Random;
 
-import static im.mak.paddle.Constants.EXTRA_FEE;
-import static im.mak.paddle.Constants.MIN_FEE;
 import static im.mak.paddle.Node.node;
 
-public class IssueNft implements Action {
+public class IssueNft extends Action<IssueNft> {
 
-    public Account sender;
     public String name;
     public String description;
-    public long quantity;
-    public byte decimals;
-    public boolean isReissuable;
-    public String compiledScript;
-    public long fee;
+    public Base64String compiledScript;
 
-    public IssueNft(Account from) {
-        this.sender = from;
+    public IssueNft(Account sender) {
+        super(sender, IssueTransaction.NFT_MIN_FEE);
 
-        this.name = "NFT " + new Random().nextInt(1000);
+        this.name = "NFT " + new Random().nextInt(100000);
         this.description = "";
-        this.quantity = 1;
-        this.decimals = 0;
-        this.isReissuable = false;
-        this.fee = 0;
-    }
-
-    public static IssueNft issueNft(Account from) {
-        return new IssueNft(from);
     }
 
     public IssueNft name(String name) {
@@ -45,24 +34,8 @@ public class IssueNft implements Action {
     }
 
     public IssueNft script(String sourceCode) {
-        this.compiledScript = sourceCode == null ? null : node().compileScript(sourceCode);
+        this.compiledScript = sourceCode == null ? Base64String.empty() : node().compileScript(sourceCode).script();
         return this;
-    }
-
-    public IssueNft fee(long fee) {
-        this.fee = fee;
-        return this;
-    }
-
-    @Override
-    public long calcFee() {
-        if (this.fee > 0) {
-            return this.fee;
-        } else {
-            long totalFee = MIN_FEE;
-            totalFee += sender.isSmart() ? EXTRA_FEE : 0;
-            return totalFee;
-        }
     }
 
 }

@@ -7,52 +7,57 @@ import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.PortBinding;
-import com.wavesplatform.wavesj.DataEntry;
-import com.wavesplatform.wavesj.Transaction;
-import com.wavesplatform.wavesj.matcher.Order;
-import com.wavesplatform.wavesj.matcher.OrderV2;
-import com.wavesplatform.wavesj.transactions.*;
-import im.mak.paddle.actions.*;
-import im.mak.paddle.api.Api;
+import com.wavesplatform.wavesj.*;
+import com.wavesplatform.wavesj.exceptions.NodeException;
+import im.mak.paddle.api.TxDebugInfo;
+import im.mak.paddle.api.TxInfo;
+import im.mak.paddle.exceptions.ApiError;
 import im.mak.paddle.exceptions.NodeError;
+import im.mak.waves.transactions.LeaseTransaction;
+import im.mak.waves.transactions.Transaction;
+import im.mak.waves.transactions.account.Address;
+import im.mak.waves.transactions.common.*;
+import im.mak.waves.transactions.data.DataEntry;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
+import java.util.regex.Pattern;
 
-import static im.mak.paddle.actions.exchange.OrderType.BUY;
-import static im.mak.paddle.actions.exchange.OrderType.SELL;
 import static java.util.Collections.singletonList;
 
 @SuppressWarnings("WeakerAccess")
-public class Node {
+public class Node extends com.wavesplatform.wavesj.Node {
 
     private static Node instance;
 
     public static Node node() {
         if (instance == null) synchronized (Node.class) {
-            if (instance == null) instance = new Node();
+            if (instance == null) {
+                try {
+                    instance = new Node();
+                } catch (IOException|URISyntaxException e) {
+                    throw new NodeError(e);
+                } catch (NodeException e) {
+                    throw new ApiError(e.getErrorCode(), e.getMessage());
+                }
+            }
         }
         return instance;
     }
 
     private final Settings conf;
-    private final com.wavesplatform.wavesj.Node wavesNode;
     private Account faucet;
 
-    public Api api;
-
-    private Node() {
+    private Node() throws NodeException, IOException, URISyntaxException {
+        super(maybeRunDockerContainer());
         conf = new Settings();
+    }
 
-        try {
-            this.wavesNode = new com.wavesplatform.wavesj.Node(conf.apiUrl, conf.chainId);
-            this.api = new Api(this.wavesNode.getUri());
-        } catch (URISyntaxException e) {
-            throw new NodeError(e);
-        }
+    private static String maybeRunDockerContainer() {
+        Settings conf = new Settings();
 
         if (conf.dockerImage != null) {
             DockerClient docker;
@@ -64,7 +69,7 @@ public class Node {
                 } catch (DockerException | InterruptedException ignore) {}
 
                 URL apiUrl = new URL(conf.apiUrl);
-                int port = apiUrl.getPort() < 0 ? 80 : apiUrl.getPort();
+                int port = apiUrl.getPort() <= 0 ? 80 : apiUrl.getPort();
                 Map<String, List<PortBinding>> portBindings = new HashMap<>();
                 portBindings.put("6869", singletonList(PortBinding
                         .of("0.0.0.0", port)));
@@ -82,10 +87,16 @@ public class Node {
                 boolean isNodeReady = false;
                 for (int repeat = 0; repeat < 60; repeat++) {
                     try {
-                        api.version();
+                        try {
+                            com.wavesplatform.wavesj.Node node = new com.wavesplatform.wavesj.Node(conf.apiUrl);
+                        } catch (URISyntaxException|IOException e) {
+                            throw new NodeError(e);
+                        } catch (NodeException e) {
+                            throw new ApiError(e.getErrorCode(), e.getMessage());
+                        }
                         isNodeReady = true;
                         break;
-                    } catch (NodeError e) {
+                    } catch (NodeError|ApiError e) {
                         try { Thread.sleep(1000); } catch (InterruptedException ignore) {}
                     }
                 }
@@ -97,8 +108,7 @@ public class Node {
             if (conf.autoShutdown)
                 Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                     try {
-                        if (docker != null
-                                && docker.listContainers().stream().anyMatch(c -> c.id().equals(containerId))) {
+                        if (docker.listContainers().stream().anyMatch(c -> c.id().equals(containerId))) {
                             docker.killContainer(containerId);
                             docker.removeContainer(containerId);
                             docker.close();
@@ -106,6 +116,7 @@ public class Node {
                     } catch (DockerException | InterruptedException e) { e.printStackTrace(); }
                 }));
         }
+        return conf.apiUrl;
     }
 
     public Account faucet() {
@@ -113,216 +124,7 @@ public class Node {
         return faucet;
     }
 
-    public byte chainId() {
-        return wavesNode.getChainId();
-    }
-
-    public int height() {
-        try {
-            return wavesNode.getHeight();
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public long balance(String address) {
-        try {
-            return wavesNode.getBalance(address);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public long balance(String address, String assetId) {
-        try {
-            return wavesNode.getBalance(address, assetId);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public List<DataEntry> data(String address) {
-        try {
-            return wavesNode.getData(address);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public DataEntry dataByKey(String address, String key) {
-        try {
-            return wavesNode.getDataByKey(address, key);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public boolean isSmart(String assetIdOrAddress) {
-        if (assetIdOrAddress == null || assetIdOrAddress.isEmpty() || "WAVES".equals(assetIdOrAddress))
-            return false;
-        else if (assetIdOrAddress.length() > 40) {
-            return api.assetDetails(assetIdOrAddress).scripted;
-        } else {
-            return api.scriptInfo(assetIdOrAddress).extraFee > 0;
-        }
-    }
-
-    public boolean isSmart(Account account) {
-        return isSmart(account.address());
-    }
-
-    public String compileScript(String s) {
-        try {
-            return wavesNode.compileScript(s);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public IssueTransaction send(Issue issue) {
-        try {
-            return (IssueTransaction) waitForTransaction(wavesNode.issueAsset(issue.sender.wavesAccount,
-                    this.chainId(), issue.name, issue.description, issue.quantity, issue.decimals,
-                    issue.isReissuable, issue.compiledScript, issue.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public TransferTransaction send(Transfer transfer) {
-        try {
-            return (TransferTransaction) waitForTransaction(wavesNode.transfer(transfer.sender.wavesAccount,
-                    transfer.recipient, transfer.amount, transfer.assetId,
-                    transfer.calcFee(), transfer.feeAssetId, transfer.attachment));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public ReissueTransaction send(Reissue reissue) {
-        try {
-            return (ReissueTransaction) waitForTransaction(wavesNode.reissueAsset(reissue.sender.wavesAccount,
-                    this.chainId(), reissue.assetId, reissue.quantity, reissue.isReissuable, reissue.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public BurnTransaction send(Burn burn) {
-        try {
-            return (BurnTransaction) waitForTransaction(wavesNode.burnAsset(
-                    burn.sender.wavesAccount, this.chainId(), burn.assetId, burn.quantity, burn.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public ExchangeTransaction send(Exchange exchange) {
-        long now = System.currentTimeMillis();
-        long nowPlus29Days = now + 2505600000L; //TODO move to Order as default
-
-        OrderV2 buyV2 = new OrderV2(exchange.buy.sender.wavesAccount, exchange.buy.matcher.wavesAccount,
-                exchange.buy.type == BUY ? Order.Type.BUY : Order.Type.SELL,
-                exchange.buy.pair, exchange.buy.amount, exchange.buy.price,
-                now, nowPlus29Days, exchange.buy.calcMatcherFee(), com.wavesplatform.wavesj.matcher.Order.V2);
-        OrderV2 sellV2 = new OrderV2(exchange.sell.sender.wavesAccount, exchange.sell.matcher.wavesAccount,
-                exchange.sell.type == SELL ? Order.Type.SELL : Order.Type.BUY,
-                exchange.sell.pair, exchange.sell.amount, exchange.sell.price,
-                now, nowPlus29Days, exchange.buy.calcMatcherFee(), com.wavesplatform.wavesj.matcher.Order.V2);
-        try {
-            return (ExchangeTransaction) waitForTransaction(wavesNode.exchange(exchange.sender.wavesAccount,
-                    buyV2, sellV2, exchange.calcAmount(), exchange.calcPrice(),
-                    exchange.calcBuyMatcherFee(), exchange.calcSellMatcherFee(), exchange.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public LeaseTransaction send(Lease lease) {
-        try {
-            return (LeaseTransaction) waitForTransaction(wavesNode.lease(
-                    lease.sender.wavesAccount, lease.recipient, lease.amount, lease.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public LeaseCancelTransaction send(LeaseCancel cancel) {
-        try {
-            return (LeaseCancelTransaction) waitForTransaction(wavesNode.cancelLease(
-                    cancel.sender.wavesAccount, this.chainId(), cancel.leaseId, cancel.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public AliasTransaction send(CreateAlias alias) {
-        try {
-            return (AliasTransaction) waitForTransaction(wavesNode.alias(
-                    alias.sender.wavesAccount, this.chainId(), alias.alias, alias.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public MassTransferTransaction send(MassTransfer mass) {
-        List<com.wavesplatform.wavesj.Transfer> transfers = new LinkedList<>();
-        mass.transfers.forEach(t -> transfers.add(new com.wavesplatform.wavesj.Transfer(t.recipient, t.amount)));
-        try {
-            return (MassTransferTransaction) waitForTransaction(wavesNode.massTransfer(
-                    mass.sender.wavesAccount, mass.assetId, transfers, mass.calcFee(), mass.attachment));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public DataTransaction send(WriteData data) {
-        try {
-            return (DataTransaction) waitForTransaction(wavesNode.data(
-                    data.sender.wavesAccount, data.data, data.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public SetScriptTransaction send(SetScript set) {
-        try {
-            return (SetScriptTransaction) waitForTransaction(wavesNode.setScript(
-                    set.sender.wavesAccount, set.compiledScript, this.chainId(), set.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public SponsorTransaction send(SponsorFee sponsor) {
-        try {
-            return (SponsorTransaction) waitForTransaction(wavesNode.sponsorAsset(
-                    sponsor.sender.wavesAccount, sponsor.assetId, sponsor.minSponsoredAssetFee, sponsor.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public SetAssetScriptTransaction send(SetAssetScript set) {
-        try {
-            return (SetAssetScriptTransaction) waitForTransaction(wavesNode.setAssetScript(
-                    set.sender.wavesAccount, this.chainId(), set.assetId, set.compiledScript, set.calcFee()));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public InvokeScriptTransaction send(InvokeScript invoke) {
-        try {
-            return (InvokeScriptTransaction) waitForTransaction(wavesNode.invokeScript(
-                    invoke.sender.wavesAccount, this.chainId(),
-                    invoke.dApp, invoke.call, invoke.payments, invoke.calcFee(), invoke.feeAssetId));
-        } catch (IOException e) {
-            throw new NodeError(e);
-        }
-    }
-
-    public Transaction waitForTransaction(String id, int waitingInSeconds) {
+    public TransactionInfo waitForTransaction(Id id, int waitingInSeconds) {
         int pollingIntervalInMillis = 100;
 
         if (waitingInSeconds < 1)
@@ -330,8 +132,8 @@ public class Node {
 
         for (long spentMillis = 0; spentMillis < waitingInSeconds * 1000L; spentMillis += pollingIntervalInMillis) {
             try {
-                return wavesNode.getTransaction(id);
-            } catch (IOException e) {
+                return this.getTransactionInfo(id);
+            } catch (NodeError|ApiError e) {
                 try {
                     Thread.sleep(pollingIntervalInMillis);
                 } catch (InterruptedException ignored) {}
@@ -340,12 +142,22 @@ public class Node {
         throw new NodeError("Could not wait for transaction " + id + " in " + waitingInSeconds + " seconds");
     }
 
-    public Transaction waitForTransaction(String id) {
+    public TransactionInfo waitForTransaction(Id id) {
         return waitForTransaction(id, (int)(conf.blockInterval / 1000));
     }
 
+    public <T extends Transaction> TxInfo<T> waitForTransaction(Id id, Class<T> txClass, int waitingInSeconds) {
+        TransactionInfo info = this.waitForTransaction(id, waitingInSeconds);
+        return new TxInfo<>(info.tx(), info.applicationStatus(), info.height());
+    }
+
+    public <T extends Transaction> TxInfo<T> waitForTransaction(Id id, Class<T> txClass) {
+        TransactionInfo info = this.waitForTransaction(id);
+        return new TxInfo<>(info.tx(), info.applicationStatus(), info.height());
+    }
+
     public int waitForHeight(int target, int blockWaitingInSeconds) {
-        int start = height();
+        int start = this.getHeight();
         int prev = start;
         int pollingIntervalInMillis = 100;
 
@@ -354,7 +166,7 @@ public class Node {
 
         for (long spentMillis = 0; spentMillis < blockWaitingInSeconds * 1000L; spentMillis += pollingIntervalInMillis) {
             try {
-                int current = height();
+                int current = this.getHeight();
 
                 if (current >= target)
                     return current;
@@ -362,7 +174,7 @@ public class Node {
                     prev = current;
                     spentMillis = 0;
                 }
-            } catch (NodeError ignored) {}
+            } catch (NodeError|ApiError ignored) {}
 
             try {
                 Thread.sleep(pollingIntervalInMillis);
@@ -379,11 +191,704 @@ public class Node {
     public int waitNBlocks(int blocksCount, int blockWaitingInSeconds) {
         if (blockWaitingInSeconds < 1)
             throw new NodeError("waitNBlocks: waiting value must be positive. Current: " + blockWaitingInSeconds);
-        return waitForHeight(height() + blocksCount, blockWaitingInSeconds);
+        return waitForHeight(this.getHeight() + blocksCount, blockWaitingInSeconds);
     }
 
     public int waitNBlocks(int blocksCount) {
         return waitNBlocks(blocksCount, (int)(conf.blockInterval * 3 / 1000));
     }
 
+    public <T extends Transaction> TxInfo<T> getTransactionInfo(Id txId, Class<T> txClass) {
+        try {
+            TransactionInfo info = super.getTransactionInfo(txId);
+            return new TxInfo<>(info.tx(), info.applicationStatus(), info.height());
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public TxDebugInfo getStateChanges(Id txId) {
+        try {
+            TransactionDebugInfo info = super.getStateChanges(txId);
+            return new TxDebugInfo(info.tx(), info.applicationStatus(), info.height(), info.stateChanges());
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    public <T extends Transaction> T getUnconfirmedTransaction(Id txId, Class<T> txClass) {
+        try {
+            Transaction tx = super.getUnconfirmedTransaction(txId);
+            return (T) tx;
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<Address> getAddresses() {
+        try {
+            return super.getAddresses();
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<Address> getAddresses(int fromIndex, int toIndex) {
+        try {
+            return super.getAddresses(fromIndex, toIndex);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public long getBalance(Address address) {
+        try {
+            return super.getBalance(address);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public long getBalance(Address address, int confirmations) {
+        try {
+            return super.getBalance(address, confirmations);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public BalanceDetails getBalanceDetails(Address address) {
+        try {
+            return super.getBalanceDetails(address);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<DataEntry> getData(Address address) {
+        try {
+            return super.getData(address);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<DataEntry> getData(Address address, List<String> keys) {
+        try {
+            return super.getData(address, keys);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<DataEntry> getData(Address address, Pattern regex) {
+        try {
+            return super.getData(address, regex);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public DataEntry getData(Address address, String key) {
+        try {
+            return super.getData(address, key);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public long getEffectiveBalance(Address address) {
+        try {
+            return super.getEffectiveBalance(address);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public long getEffectiveBalance(Address address, int confirmations) {
+        try {
+            return super.getEffectiveBalance(address, confirmations);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public ScriptInfo getScriptInfo(Address address) {
+        try {
+            return super.getScriptInfo(address);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public ScriptMeta getScriptMeta(Address address) {
+        try {
+            return super.getScriptMeta(address);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<Alias> getAliasesByAddress(Address address) {
+        try {
+            return super.getAliasesByAddress(address);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public Address getAddressByAlias(Alias alias) {
+        try {
+            return super.getAddressByAlias(alias);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public AssetDistribution getAssetDistribution(AssetId assetId, int height) {
+        try {
+            return super.getAssetDistribution(assetId, height);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public AssetDistribution getAssetDistribution(AssetId assetId, int height, int limit) {
+        try {
+            return super.getAssetDistribution(assetId, height, limit);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public AssetDistribution getAssetDistribution(AssetId assetId, int height, int limit, Address after) {
+        try {
+            return super.getAssetDistribution(assetId, height, limit, after);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<AssetBalance> getAssetsBalance(Address address) {
+        try {
+            return super.getAssetsBalance(address);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public long getAssetBalance(Address address, AssetId assetId) {
+        try {
+            return super.getAssetBalance(address, assetId);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public AssetDetails getAssetDetails(AssetId assetId) {
+        try {
+            return super.getAssetDetails(assetId);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<AssetDetails> getAssetsDetails(List<AssetId> assetIds) {
+        try {
+            return super.getAssetsDetails(assetIds);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<AssetDetails> getNft(Address address) {
+        try {
+            return super.getNft(address);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<AssetDetails> getNft(Address address, int limit) {
+        try {
+            return super.getNft(address, limit);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<AssetDetails> getNft(Address address, int limit, AssetId after) {
+        try {
+            return super.getNft(address, limit, after);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public BlockchainRewards getBlockchainRewards() {
+        try {
+            return super.getBlockchainRewards();
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public BlockchainRewards getBlockchainRewards(int height) {
+        try {
+            return super.getBlockchainRewards(height);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public int getHeight() {
+        try {
+            return super.getHeight();
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public int getBlockHeight(Base58String blockId) {
+        try {
+            return super.getBlockHeight(blockId);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public int getBlocksDelay(Base58String startBlockId, int blocksNum) {
+        try {
+            return super.getBlocksDelay(startBlockId, blocksNum);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public BlockHeaders getBlockHeaders(int height) {
+        try {
+            return super.getBlockHeaders(height);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public BlockHeaders getBlockHeaders(Base58String blockId) {
+        try {
+            return super.getBlockHeaders(blockId);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<BlockHeaders> getBlocksHeaders(int fromHeight, int toHeight) {
+        try {
+            return super.getBlocksHeaders(fromHeight, toHeight);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public BlockHeaders getLastBlockHeaders() {
+        try {
+            return super.getLastBlockHeaders();
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public Block getBlock(int height) {
+        try {
+            return super.getBlock(height);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public Block getBlock(Base58String blockId) {
+        try {
+            return super.getBlock(blockId);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<Block> getBlocks(int fromHeight, int toHeight) {
+        try {
+            return super.getBlocks(fromHeight, toHeight);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public Block getGenesisBlock() {
+        try {
+            return super.getGenesisBlock();
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public Block getLastBlock() {
+        try {
+            return super.getLastBlock();
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<Block> getBlocksGeneratedBy(Address generator, int fromHeight, int toHeight) {
+        try {
+            return super.getBlocksGeneratedBy(generator, fromHeight, toHeight);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public String getVersion() {
+        try {
+            return super.getVersion();
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<HistoryBalance> getBalanceHistory(Address address) {
+        try {
+            return super.getBalanceHistory(address);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<TransactionDebugInfo> getStateChangesByAddress(Address address, int limit, Id afterTxId) {
+        try {
+            return super.getStateChangesByAddress(address, limit, afterTxId);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<TransactionDebugInfo> getStateChangesByAddress(Address address, int limit) {
+        try {
+            return super.getStateChangesByAddress(address, limit);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<TransactionDebugInfo> getStateChangesByAddress(Address address) {
+        try {
+            return super.getStateChangesByAddress(address);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public <T extends Transaction> Validation validateTransaction(T transaction) {
+        try {
+            return super.validateTransaction(transaction);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<LeaseTransaction> getActiveLeases(Address address) {
+        try {
+            return super.getActiveLeases(address);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public <T extends Transaction> Amount calculateTransactionFee(T transaction) {
+        try {
+            return super.calculateTransactionFee(transaction);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public <T extends Transaction> T broadcast(T transaction) {
+        try {
+            return super.broadcast(transaction);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public TransactionInfo getTransactionInfo(Id txId) {
+        try {
+            return super.getTransactionInfo(txId);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<TransactionInfo> getTransactionsByAddress(Address address) {
+        try {
+            return super.getTransactionsByAddress(address);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<TransactionInfo> getTransactionsByAddress(Address address, int limit) {
+        try {
+            return super.getTransactionsByAddress(address, limit);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<TransactionInfo> getTransactionsByAddress(Address address, int limit, Id afterTxId) {
+        try {
+            return super.getTransactionsByAddress(address, limit, afterTxId);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public TransactionStatus getTransactionStatus(Id txId) {
+        try {
+            return super.getTransactionStatus(txId);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<TransactionStatus> getTransactionsStatus(List<Id> txIds) {
+        try {
+            return super.getTransactionsStatus(txIds);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<TransactionStatus> getTransactionsStatus(Id... txIds) {
+        try {
+            return super.getTransactionsStatus(txIds);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public Transaction getUnconfirmedTransaction(Id txId) {
+        try {
+            return super.getUnconfirmedTransaction(txId);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public List<Transaction> getUnconfirmedTransactions() {
+        try {
+            return super.getUnconfirmedTransactions();
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public int getUtxSize() {
+        try {
+            return super.getUtxSize();
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
+
+    @Override
+    public ScriptInfo compileScript(String source) {
+        try {
+            return super.compileScript(source);
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        }
+    }
 }

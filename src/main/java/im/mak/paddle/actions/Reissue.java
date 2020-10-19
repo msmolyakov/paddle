@@ -1,69 +1,51 @@
 package im.mak.paddle.actions;
 
+import com.wavesplatform.wavesj.exceptions.NodeException;
 import im.mak.paddle.Account;
+import im.mak.waves.transactions.ReissueTransaction;
+import im.mak.waves.transactions.common.AssetId;
+
+import java.io.IOException;
 
 import static im.mak.paddle.Constants.EXTRA_FEE;
-import static im.mak.paddle.Constants.ONE_WAVES;
 import static im.mak.paddle.Node.node;
 
-public class Reissue implements Action {
+public class Reissue extends Action<Reissue> {
 
-    public Account sender;
-    public String assetId;
-    public long quantity;
-    public boolean isReissuable;
-    public long fee;
+    public AssetId assetId;
+    public long amount;
+    public boolean reissuable;
 
-    public Reissue(Account from) {
-        this.sender = from;
+    public Reissue(Account sender) {
+        super(sender, ReissueTransaction.MIN_FEE);
 
-        this.quantity = 0;
-        this.isReissuable = true;
-        this.fee = 0;
+        this.assetId = AssetId.WAVES;
+        this.amount = 0;
+        this.reissuable = true;
     }
 
-    public static Reissue reissue(Account from) {
-        return new Reissue(from);
-    }
-
-    public Reissue asset(String assetId) {
+    public Reissue assetId(AssetId assetId) {
         this.assetId = assetId;
         return this;
     }
 
-    public Reissue quantity(long quantity) {
-        this.quantity = quantity;
+    public Reissue amount(long amount) {
+        this.amount = amount;
         return this;
     }
 
-    public Reissue reissuable(boolean isReissuable) {
-        this.isReissuable = isReissuable;
-        return this;
-    }
-
-    public Reissue reissuable() {
-        return reissuable(true);
-    }
-
-    public Reissue notReissuable() {
-        return reissuable(false);
-    }
-
-    public Reissue fee(long fee) {
-        this.fee = fee;
+    public Reissue reissuable(boolean reissuable) {
+        this.reissuable = reissuable;
         return this;
     }
 
     @Override
     public long calcFee() {
-        if (this.fee > 0) {
-            return this.fee;
-        } else {
-            long totalFee = ONE_WAVES;
-            totalFee += sender.isSmart() ? EXTRA_FEE : 0;
-            totalFee += node().isSmart(assetId) ? EXTRA_FEE : 0;
-            return totalFee;
-        }
+        if (feeAmount > 0)
+            return feeAmount;
+
+        long extraFee = node().getAssetDetails(assetId).isScripted() ? EXTRA_FEE : 0;
+        return super.calcFee() + extraFee;
     }
 
 }

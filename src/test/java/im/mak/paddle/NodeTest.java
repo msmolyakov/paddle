@@ -14,7 +14,7 @@ class NodeTest {
 
         @Test
         void canWaitForHeight() {
-            int current = node().height();
+            int current = node().getHeight();
 
             int height = node().waitForHeight(current + 1);
 
@@ -23,7 +23,7 @@ class NodeTest {
 
         @Test
         void errorIfCantReachTheHeight() {
-            int current = node().height();
+            int current = node().getHeight();
 
             NodeError e = assertThrows(NodeError.class, () ->
                     node().waitForHeight(current + 100, 1)
@@ -41,7 +41,7 @@ class NodeTest {
 
         @Test
         void canWaitNBlocks() {
-            int current = node().height();
+            int current = node().getHeight();
 
             int height = node().waitNBlocks(1);
 
@@ -50,7 +50,7 @@ class NodeTest {
 
         @Test
         void errorIfCantWaitNBlocks() {
-            int current = node().height();
+            int current = node().getHeight();
 
             NodeError e = assertThrows(NodeError.class, () ->
                     node().waitNBlocks(100, 1)

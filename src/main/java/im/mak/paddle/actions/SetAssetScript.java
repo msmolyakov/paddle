@@ -1,51 +1,38 @@
 package im.mak.paddle.actions;
 
+import com.wavesplatform.wavesj.exceptions.NodeException;
 import im.mak.paddle.Account;
+import im.mak.waves.transactions.SetAssetScriptTransaction;
+import im.mak.waves.transactions.common.AssetId;
+import im.mak.waves.transactions.common.Base64String;
+
+import java.io.IOException;
 
 import static im.mak.paddle.Constants.EXTRA_FEE;
 import static im.mak.paddle.Constants.ONE_WAVES;
 import static im.mak.paddle.Node.node;
 
-public class SetAssetScript implements Action {
+public class SetAssetScript extends Action<SetAssetScript> {
 
-    public Account sender;
-    public String assetId;
-    public String compiledScript;
-    public long fee;
+    public AssetId assetId;
+    public Base64String compiledScript;
 
-    public SetAssetScript(Account from) {
-        this.sender = from;
-        this.fee = 0;
+    public SetAssetScript(Account sender) {
+        super(sender, SetAssetScriptTransaction.MIN_FEE);
     }
 
-    public static SetAssetScript setAssetScript(Account from) {
-        return new SetAssetScript(from);
-    }
-
-    public SetAssetScript asset(String assetId) {
+    public SetAssetScript assetId(AssetId assetId) {
         this.assetId = assetId;
         return this;
     }
 
+    public SetAssetScript compiledScript(Base64String compiled) {
+        this.compiledScript = compiled;
+        return this;
+    }
+
     public SetAssetScript script(String sourceCode) {
-        this.compiledScript = sourceCode == null ? null : node().compileScript(sourceCode);
-        return this;
-    }
-
-    public SetAssetScript fee(long fee) {
-        this.fee = fee;
-        return this;
-    }
-
-    @Override
-    public long calcFee() {
-        if (this.fee > 0) {
-            return this.fee;
-        } else {
-            long totalFee = ONE_WAVES;
-            totalFee += sender.isSmart() ? EXTRA_FEE : 0;
-            return totalFee;
-        }
+        return compiledScript(node().compileScript(sourceCode).script());
     }
 
 }

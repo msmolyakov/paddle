@@ -1,42 +1,41 @@
 package im.mak.paddle.actions;
 
+import com.wavesplatform.wavesj.exceptions.NodeException;
 import im.mak.paddle.Account;
-import im.mak.paddle.actions.exchange.Order;
+import im.mak.waves.transactions.ExchangeTransaction;
+import im.mak.waves.transactions.exchange.Order;
+import im.mak.waves.transactions.exchange.OrderType;
 
-import static im.mak.paddle.Constants.MIN_FEE;
+import java.io.IOException;
 
-public class Exchange implements Action {
+import static im.mak.paddle.Constants.EXTRA_FEE;
+import static im.mak.paddle.Node.node;
 
-    public Account sender;
-    public Order buy;
-    public Order sell;
+public class Exchange extends Action<Exchange> {
+
+    public Order order1;
+    public Order order2;
     public long amount;
     public long price;
     public long buyMatcherFee;
     public long sellMatcherFee;
-    public long fee;
 
-    public Exchange(Account from) {
-        this.sender = from;
+    public Exchange(Account sender) {
+        super(sender, ExchangeTransaction.MIN_FEE);
 
         this.amount = 0;
         this.price = 0;
         this.buyMatcherFee = 0;
         this.sellMatcherFee = 0;
-        this.fee = 0;
     }
 
-    public static Exchange exchange(Account from) {
-        return new Exchange(from);
-    }
-
-    public Exchange buy(Order buy) { //TODO put like action(from)
-        this.buy = buy;
+    public Exchange order1(Order order1) {
+        this.order1 = order1;
         return this;
     }
 
-    public Exchange sell(Order sell) {
-        this.sell = sell;
+    public Exchange order2(Order order2) {
+        this.order2 = order2;
         return this;
     }
 
@@ -60,34 +59,33 @@ public class Exchange implements Action {
         return this;
     }
 
-    public Exchange fee(long fee) {
-        this.fee = fee;
-        return this;
-    }
-
     public long calcAmount() {
-        return amount > 0 ? amount : Math.min(buy.amount, sell.amount);
+        return amount > 0 ? amount : Math.min(order1.amount().value(), order2.amount().value());
     }
 
     public long calcPrice() {
-        return price > 0 ? price : buy.price;
+        return price > 0 ? price : order(OrderType.BUY).price().value();
     }
 
-    public long calcBuyMatcherFee() {
-        return buyMatcherFee > 0 ? buyMatcherFee : MIN_FEE * 3; //TODO proportionally from amount/price and order fee
-    }
-
-    public long calcSellMatcherFee() {
-        return sellMatcherFee > 0 ? sellMatcherFee : MIN_FEE * 3;
+    private Order order(OrderType type) {
+        if (order1.type() == type)
+            return order1;
+        else if (order2.type() == type)
+            return order2;
+        else throw new IllegalStateException("Can't find order with type \"" + type.value() + "\"");
     }
 
     @Override
     public long calcFee() {
-        if (this.fee > 0) {
-            return this.fee;
-        } else {
-            return buy.calcMatcherFee();
-        }
+        if (feeAmount > 0)
+            return feeAmount;
+
+        long totalWavesFee = super.calcFee();
+        //TODO what about auto calc fee for orders?
+        totalWavesFee += node().getAssetDetails(order1.amount().assetId()).isScripted() ? EXTRA_FEE : 0;
+        totalWavesFee += node().getAssetDetails(order1.price().assetId()).isScripted() ? EXTRA_FEE : 0;
+
+        return totalWavesFee;
     }
 
 }

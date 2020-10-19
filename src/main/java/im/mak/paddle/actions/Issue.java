@@ -1,37 +1,32 @@
 package im.mak.paddle.actions;
 
+import com.wavesplatform.wavesj.exceptions.NodeException;
 import im.mak.paddle.Account;
+import im.mak.waves.transactions.IssueTransaction;
+import im.mak.waves.transactions.common.Base64String;
 
+import java.io.IOException;
 import java.util.Random;
 
-import static im.mak.paddle.Constants.EXTRA_FEE;
-import static im.mak.paddle.Constants.ONE_WAVES;
 import static im.mak.paddle.Node.node;
 
-public class Issue implements Action {
+public class Issue extends Action<Issue> {
 
-    public Account sender;
     public String name;
     public String description;
     public long quantity;
-    public byte decimals;
-    public boolean isReissuable;
-    public String compiledScript;
-    public long fee;
+    public int decimals;
+    public boolean reissuable;
+    public Base64String compiledScript;
 
-    public Issue(Account from) {
-        this.sender = from;
+    public Issue(Account sender) {
+        super(sender, IssueTransaction.MIN_FEE);
 
-        this.name = "Asset " + new Random().nextInt(10000);
+        this.name = "Asset " + new Random().nextInt(1000);
         this.description = "";
         this.quantity = 10000000000000000L;
         this.decimals = 8;
-        this.isReissuable = true;
-        this.fee = 0;
-    }
-
-    public static Issue issue(Account from) {
-        return new Issue(from);
+        this.reissuable = true;
     }
 
     public Issue name(String name) {
@@ -50,42 +45,19 @@ public class Issue implements Action {
     }
 
     public Issue decimals(int value) {
-        this.decimals = (byte) value;
+        this.decimals = value;
         return this;
     }
 
-    public Issue reissuable(boolean isReissuable) {
-        this.isReissuable = isReissuable;
+    public Issue reissuable(boolean reissuable) {
+        this.reissuable = reissuable;
         return this;
     }
 
-    public Issue reissuable() {
-        return reissuable(true);
-    }
-
-    public Issue notReissuable() {
-        return reissuable(false);
-    }
-
+    //TODO rework such methods
     public Issue script(String sourceCode) {
-        this.compiledScript = sourceCode == null ? null : node().compileScript(sourceCode);
+        this.compiledScript = sourceCode == null ? Base64String.empty() : node().compileScript(sourceCode).script();
         return this;
-    }
-
-    public Issue fee(long fee) {
-        this.fee = fee;
-        return this;
-    }
-
-    @Override
-    public long calcFee() {
-        if (this.fee > 0) {
-            return this.fee;
-        } else {
-            long totalFee = ONE_WAVES;
-            totalFee += sender.isSmart() ? EXTRA_FEE : 0;
-            return totalFee;
-        }
     }
 
 }

@@ -1,7 +1,8 @@
 package im.mak.paddle.e2e;
 
 import im.mak.paddle.Account;
-import im.mak.paddle.api.exceptions.ApiError;
+import im.mak.paddle.exceptions.ApiError;
+import im.mak.waves.transactions.common.AssetId;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -12,29 +13,28 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ApiErrorTest {
 
-    private Account alice;
-    private String assetId;
+    private static AssetId assetId;
 
     @BeforeAll
-    void before() {
-        alice = new Account(10_00000000L);
+    static void before() {
+        Account alice = new Account(10_00000000L);
 
-        assetId = alice.issues(i -> i.name("Asset").quantity(1000_00000000L)).getId().toString();
+        assetId = alice.issue(i -> i.name("Asset").quantity(1000_00000000L)).tx().assetId();
     }
 
     @Test
     void a() {
-        assertThat(node().api.assetDetails(assetId).name).isEqualTo("Asset");
+        assertThat(node().getAssetDetails(assetId).name()).isEqualTo("Asset");
     }
 
     @Test
     void b() {
         ApiError e = assertThrows(ApiError.class, () ->
-                System.out.println("result -> " + node().api.assetDetails("r3r3r3").name)
+                System.out.println("result -> " + node().getAssetDetails(AssetId.as("r3r3r3")).name())
         );
         assertAll("error fields",
-                () -> assertThat(e.error).isEqualTo(199),
-                () -> assertThat(e.message).isEqualTo("Failed to find issue transaction by ID")
+                () -> assertThat(e.code).isEqualTo(4007),
+                () -> assertThat(e.message).isEqualTo("Invalid asset id")
         );
     }
 

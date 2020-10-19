@@ -1,45 +1,29 @@
 package im.mak.paddle.actions;
 
+import com.wavesplatform.wavesj.exceptions.NodeException;
 import im.mak.paddle.Account;
+import im.mak.waves.transactions.SetScriptTransaction;
+import im.mak.waves.transactions.common.Base64String;
 
-import static im.mak.paddle.Constants.EXTRA_FEE;
-import static im.mak.paddle.Constants.MIN_FEE;
+import java.io.IOException;
+
 import static im.mak.paddle.Node.node;
 
-public class SetScript implements Action {
+public class SetScript extends Action<SetScript> {
 
-    public Account sender;
-    public String compiledScript;
-    public long fee;
+    public Base64String compiledScript;
 
-    public SetScript(Account from) {
-        this.sender = from;
-        this.fee = 0;
+    public SetScript(Account sender) {
+        super(sender, SetScriptTransaction.MIN_FEE);
     }
 
-    public static SetScript setScript(Account from) {
-        return new SetScript(from);
+    public SetScript compiledScript(Base64String compiled) {
+        this.compiledScript = compiled;
+        return this;
     }
 
     public SetScript script(String sourceCode) {
-        this.compiledScript = sourceCode == null ? null : node().compileScript(sourceCode);
-        return this;
-    }
-
-    public SetScript fee(long fee) {
-        this.fee = fee;
-        return this;
-    }
-
-    @Override
-    public long calcFee() {
-        if (this.fee > 0) {
-            return this.fee;
-        } else {
-            long totalFee = MIN_FEE * 10;
-            totalFee += sender.isSmart() ? EXTRA_FEE : 0;
-            return totalFee;
-        }
+        return compiledScript(node().compileScript(sourceCode).script());
     }
 
 }
