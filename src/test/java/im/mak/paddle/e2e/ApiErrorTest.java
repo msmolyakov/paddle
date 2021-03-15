@@ -33,8 +33,8 @@ class ApiErrorTest {
                 System.out.println("result -> " + node().getAssetDetails(AssetId.as("r3r3r3")).name())
         );
         assertAll("error fields",
-                () -> assertThat(e.code).isEqualTo(4007),
-                () -> assertThat(e.message).isEqualTo("Invalid asset id")
+                () -> assertThat(e.getErrorCode()).isEqualTo(4007),
+                () -> assertThat(e.getMessage()).isEqualTo("Invalid asset id")
         );
     }
 

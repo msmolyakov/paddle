@@ -3,10 +3,13 @@ package im.mak.paddle.exceptions;
 public class ApiError extends Error {
 
     public final int code;
-    public final String message;
 
     public ApiError(int code, String message) {
+        super(message);
         this.code = code;
-        this.message = message;
+    }
+
+    public int getErrorCode() {
+        return this.code;
     }
 }
