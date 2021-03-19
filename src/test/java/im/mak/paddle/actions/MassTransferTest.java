@@ -1,10 +1,10 @@
 package im.mak.paddle.actions;
 
 import im.mak.paddle.Account;
-import im.mak.waves.transactions.MassTransferTransaction;
-import im.mak.waves.transactions.WavesConfig;
-import im.mak.waves.transactions.common.Alias;
-import im.mak.waves.transactions.common.AssetId;
+import com.wavesplatform.transactions.MassTransferTransaction;
+import com.wavesplatform.transactions.WavesConfig;
+import com.wavesplatform.transactions.common.Alias;
+import com.wavesplatform.transactions.common.AssetId;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

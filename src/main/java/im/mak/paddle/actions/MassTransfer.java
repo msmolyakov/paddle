@@ -1,11 +1,11 @@
 package im.mak.paddle.actions;
 
 import im.mak.paddle.Account;
-import im.mak.waves.transactions.MassTransferTransaction;
-import im.mak.waves.transactions.common.AssetId;
-import im.mak.waves.transactions.common.Base58String;
-import im.mak.waves.transactions.common.Recipient;
-import im.mak.waves.transactions.mass.Transfer;
+import com.wavesplatform.transactions.MassTransferTransaction;
+import com.wavesplatform.transactions.common.AssetId;
+import com.wavesplatform.transactions.common.Base58String;
+import com.wavesplatform.transactions.common.Recipient;
+import com.wavesplatform.transactions.mass.Transfer;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;

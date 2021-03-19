@@ -1,11 +1,8 @@
 package im.mak.paddle.actions;
 
-import com.wavesplatform.wavesj.exceptions.NodeException;
 import im.mak.paddle.Account;
-import im.mak.waves.transactions.SetScriptTransaction;
-import im.mak.waves.transactions.common.Base64String;
-
-import java.io.IOException;
+import com.wavesplatform.transactions.SetScriptTransaction;
+import com.wavesplatform.transactions.common.Base64String;
 
 import static im.mak.paddle.Node.node;
 

@@ -1,8 +1,8 @@
 package im.mak.paddle.actions;
 
 import im.mak.paddle.Account;
-import im.mak.waves.transactions.account.PrivateKey;
-import im.mak.waves.transactions.common.Proof;
+import com.wavesplatform.transactions.account.PrivateKey;
+import com.wavesplatform.transactions.common.Proof;
 
 import java.util.ArrayList;
 import java.util.List;

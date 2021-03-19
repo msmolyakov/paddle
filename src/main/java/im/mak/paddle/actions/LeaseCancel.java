@@ -1,8 +1,8 @@
 package im.mak.paddle.actions;
 
 import im.mak.paddle.Account;
-import im.mak.waves.transactions.LeaseCancelTransaction;
-import im.mak.waves.transactions.common.Id;
+import com.wavesplatform.transactions.LeaseCancelTransaction;
+import com.wavesplatform.transactions.common.Id;
 
 public class LeaseCancel extends Action<LeaseCancel> {
 

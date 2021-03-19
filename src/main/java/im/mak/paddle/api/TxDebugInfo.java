@@ -3,8 +3,8 @@ package im.mak.paddle.api;
 import com.wavesplatform.wavesj.ApplicationStatus;
 import com.wavesplatform.wavesj.StateChanges;
 import com.wavesplatform.wavesj.TransactionDebugInfo;
-import im.mak.waves.transactions.InvokeScriptTransaction;
-import im.mak.waves.transactions.Transaction;
+import com.wavesplatform.transactions.InvokeScriptTransaction;
+import com.wavesplatform.transactions.Transaction;
 
 public class TxDebugInfo extends TransactionDebugInfo {
 

@@ -1,15 +1,10 @@
 package im.mak.paddle.actions;
 
-import com.wavesplatform.wavesj.exceptions.NodeException;
 import im.mak.paddle.Account;
-import im.mak.waves.transactions.SetAssetScriptTransaction;
-import im.mak.waves.transactions.common.AssetId;
-import im.mak.waves.transactions.common.Base64String;
+import com.wavesplatform.transactions.SetAssetScriptTransaction;
+import com.wavesplatform.transactions.common.AssetId;
+import com.wavesplatform.transactions.common.Base64String;
 
-import java.io.IOException;
-
-import static im.mak.paddle.Constants.EXTRA_FEE;
-import static im.mak.paddle.Constants.ONE_WAVES;
 import static im.mak.paddle.Node.node;
 
 public class SetAssetScript extends Action<SetAssetScript> {

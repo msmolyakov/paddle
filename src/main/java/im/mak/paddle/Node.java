@@ -13,11 +13,11 @@ import im.mak.paddle.api.TxDebugInfo;
 import im.mak.paddle.api.TxInfo;
 import im.mak.paddle.exceptions.ApiError;
 import im.mak.paddle.exceptions.NodeError;
-import im.mak.waves.transactions.LeaseTransaction;
-import im.mak.waves.transactions.Transaction;
-import im.mak.waves.transactions.account.Address;
-import im.mak.waves.transactions.common.*;
-import im.mak.waves.transactions.data.DataEntry;
+import com.wavesplatform.transactions.LeaseTransaction;
+import com.wavesplatform.transactions.Transaction;
+import com.wavesplatform.transactions.account.Address;
+import com.wavesplatform.transactions.common.*;
+import com.wavesplatform.transactions.data.DataEntry;
 
 import java.io.IOException;
 import java.net.MalformedURLException;

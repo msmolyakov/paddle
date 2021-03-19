@@ -1,8 +1,8 @@
 package im.mak.paddle.e2e;
 
 import im.mak.paddle.Account;
-import im.mak.waves.transactions.common.Base64String;
-import im.mak.waves.transactions.data.*;
+import com.wavesplatform.transactions.common.Base64String;
+import com.wavesplatform.transactions.data.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

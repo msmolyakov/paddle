@@ -1,8 +1,8 @@
 package im.mak.paddle.actions;
 
 import im.mak.paddle.Account;
-import im.mak.waves.transactions.LeaseTransaction;
-import im.mak.waves.transactions.common.Recipient;
+import com.wavesplatform.transactions.LeaseTransaction;
+import com.wavesplatform.transactions.common.Recipient;
 
 public class Lease extends Action<Lease> {
 

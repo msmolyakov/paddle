@@ -1,13 +1,10 @@
 package im.mak.paddle.actions;
 
-import com.wavesplatform.wavesj.exceptions.NodeException;
 import im.mak.paddle.Account;
-import im.mak.waves.transactions.DataTransaction;
-import im.mak.waves.transactions.common.Base64String;
-import im.mak.waves.transactions.common.ByteString;
-import im.mak.waves.transactions.data.*;
+import com.wavesplatform.transactions.DataTransaction;
+import com.wavesplatform.transactions.common.Base64String;
+import com.wavesplatform.transactions.data.*;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;

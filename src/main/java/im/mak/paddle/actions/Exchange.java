@@ -1,12 +1,9 @@
 package im.mak.paddle.actions;
 
-import com.wavesplatform.wavesj.exceptions.NodeException;
 import im.mak.paddle.Account;
-import im.mak.waves.transactions.ExchangeTransaction;
-import im.mak.waves.transactions.exchange.Order;
-import im.mak.waves.transactions.exchange.OrderType;
-
-import java.io.IOException;
+import com.wavesplatform.transactions.ExchangeTransaction;
+import com.wavesplatform.transactions.exchange.Order;
+import com.wavesplatform.transactions.exchange.OrderType;
 
 import static im.mak.paddle.Constants.EXTRA_FEE;
 import static im.mak.paddle.Node.node;

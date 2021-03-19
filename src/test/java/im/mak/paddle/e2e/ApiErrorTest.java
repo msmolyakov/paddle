@@ -2,7 +2,7 @@ package im.mak.paddle.e2e;
 
 import im.mak.paddle.Account;
 import im.mak.paddle.exceptions.ApiError;
-import im.mak.waves.transactions.common.AssetId;
+import com.wavesplatform.transactions.common.AssetId;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

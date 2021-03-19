@@ -1,8 +1,8 @@
 package im.mak.paddle.actions;
 
 import im.mak.paddle.Account;
-import im.mak.waves.transactions.CreateAliasTransaction;
-import im.mak.waves.transactions.common.Alias;
+import com.wavesplatform.transactions.CreateAliasTransaction;
+import com.wavesplatform.transactions.common.Alias;
 
 public class CreateAlias extends Action<CreateAlias> {
 

@@ -1,8 +1,8 @@
 package im.mak.paddle.e2e;
 
 import im.mak.paddle.Account;
-import im.mak.waves.transactions.InvokeScriptTransaction;
-import im.mak.waves.transactions.invocation.IntegerArg;
+import com.wavesplatform.transactions.InvokeScriptTransaction;
+import com.wavesplatform.transactions.invocation.IntegerArg;
 import org.junit.jupiter.api.*;
 
 import static im.mak.paddle.Async.async;

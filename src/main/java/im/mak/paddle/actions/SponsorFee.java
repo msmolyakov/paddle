@@ -1,8 +1,8 @@
 package im.mak.paddle.actions;
 
 import im.mak.paddle.Account;
-import im.mak.waves.transactions.SponsorFeeTransaction;
-import im.mak.waves.transactions.common.AssetId;
+import com.wavesplatform.transactions.SponsorFeeTransaction;
+import com.wavesplatform.transactions.common.AssetId;
 
 //TODO action to cancel sponsorship
 

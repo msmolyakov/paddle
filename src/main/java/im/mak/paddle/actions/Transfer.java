@@ -1,14 +1,12 @@
 package im.mak.paddle.actions;
 
-import com.wavesplatform.wavesj.exceptions.NodeException;
 import im.mak.paddle.Account;
-import im.mak.waves.transactions.TransferTransaction;
-import im.mak.waves.transactions.common.Amount;
-import im.mak.waves.transactions.common.AssetId;
-import im.mak.waves.transactions.common.Base58String;
-import im.mak.waves.transactions.common.Recipient;
+import com.wavesplatform.transactions.TransferTransaction;
+import com.wavesplatform.transactions.common.Amount;
+import com.wavesplatform.transactions.common.AssetId;
+import com.wavesplatform.transactions.common.Base58String;
+import com.wavesplatform.transactions.common.Recipient;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import static im.mak.paddle.Constants.EXTRA_FEE;

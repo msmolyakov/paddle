@@ -1,11 +1,8 @@
 package im.mak.paddle.actions;
 
-import com.wavesplatform.wavesj.exceptions.NodeException;
 import im.mak.paddle.Account;
-import im.mak.waves.transactions.ReissueTransaction;
-import im.mak.waves.transactions.common.AssetId;
-
-import java.io.IOException;
+import com.wavesplatform.transactions.ReissueTransaction;
+import com.wavesplatform.transactions.common.AssetId;
 
 import static im.mak.paddle.Constants.EXTRA_FEE;
 import static im.mak.paddle.Node.node;
