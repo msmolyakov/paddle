@@ -1,8 +1,8 @@
 package im.mak.paddle.e2e;
 
+import com.wavesplatform.transactions.common.Amount;
 import im.mak.paddle.Account;
-import com.wavesplatform.transactions.InvokeScriptTransaction;
-import com.wavesplatform.transactions.invocation.IntegerArg;
+import im.mak.paddle.dapps.Wallet;
 import org.junit.jupiter.api.*;
 
 import static im.mak.paddle.Async.async;
@@ -14,6 +14,7 @@ import static org.junit.jupiter.api.MethodOrderer.Alphanumeric;
 class WalletTest {
 
     private static Account alice, bob, carol;
+    private static Wallet wallet;
 
     @BeforeAll
     static void before() {
@@ -25,6 +26,7 @@ class WalletTest {
                 () -> bob = new Account(1_00000000L),
                 () -> carol = new Account(1_00000000L)
         );
+        wallet = new Wallet(alice.address());
     }
 
     @Nested
@@ -36,7 +38,7 @@ class WalletTest {
             long aliceInitBalance = alice.getWavesBalance();
             long amount = 100;
 
-            bob.invoke(i -> i.dApp(alice).function("deposit").wavesPayment(amount));
+            bob.invoke(wallet.deposit(), Amount.of(amount));
 
             assertAll("data and balances",
                     () -> assertThat(alice.getData().size()).isEqualTo(1),
@@ -51,7 +53,7 @@ class WalletTest {
             long prevDeposit = alice.getIntegerData(bob.address().toString());
             long amount = 50;
 
-            bob.invoke(i -> i.dApp(alice).function("deposit").wavesPayment(amount));
+            bob.invoke(wallet.deposit(), i -> i.wavesPayment(amount));
 
             assertAll("data",
                     () -> assertThat(alice.getData().size()).isEqualTo(1),
@@ -64,7 +66,7 @@ class WalletTest {
             long bobDeposit = alice.getIntegerData(bob.address().toString());
             long amount = 20;
 
-            carol.invoke(i -> i.dApp(alice).function("deposit").wavesPayment(amount));
+            carol.invoke(wallet.deposit(), Amount.of(amount));
 
             assertAll("data",
                     () -> assertThat(alice.getData().size()).isEqualTo(2),
@@ -81,7 +83,9 @@ class WalletTest {
             long carolDeposit = alice.getIntegerData(carol.address().toString());
             long amount = 1;
 
-            InvokeScriptTransaction invoke = bob.invoke((i -> i.dApp(alice).function("withdraw", IntegerArg.as(amount)))).tx();
+            long invokeFee =
+                    bob.invoke(wallet.withdraw(amount))
+                            .tx().fee().value();
 
             assertAll("data and balances",
                     () -> assertThat(alice.getData().size()).isEqualTo(2),
@@ -89,7 +93,7 @@ class WalletTest {
                     () -> assertThat(alice.getIntegerData(carol.address().toString())).isEqualTo(carolDeposit),
 
                     () -> assertThat(alice.getWavesBalance()).isEqualTo(aliceInitBalance - amount),
-                    () -> assertThat(bob.getWavesBalance()).isEqualTo(bobInitBalance + amount - invoke.fee().value())
+                    () -> assertThat(bob.getWavesBalance()).isEqualTo(bobInitBalance + amount - invokeFee)
             );
         }
 
@@ -99,14 +103,16 @@ class WalletTest {
             long bobInitBalance = bob.getWavesBalance();
             long amount = alice.getIntegerData(bob.address().toString());
 
-            InvokeScriptTransaction invoke = bob.invoke((i -> i.dApp(alice).function("withdraw", IntegerArg.as(amount)))).tx();
+            long invokeFee =
+                    bob.invoke(wallet.withdraw(amount))
+                            .tx().fee().value();
 
             assertAll("data and balances",
                     () -> assertThat(alice.getData().size()).isEqualTo(2),
                     () -> assertThat(alice.getIntegerData(bob.address().toString())).isEqualTo(0),
 
                     () -> assertThat(alice.getWavesBalance()).isEqualTo(aliceInitBalance - amount),
-                    () -> assertThat(bob.getWavesBalance()).isEqualTo(bobInitBalance + amount - invoke.fee().value())
+                    () -> assertThat(bob.getWavesBalance()).isEqualTo(bobInitBalance + amount - invokeFee)
             );
         }
 

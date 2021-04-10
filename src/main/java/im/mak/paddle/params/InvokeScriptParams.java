@@ -45,9 +45,12 @@ public class InvokeScriptParams extends TxParams<InvokeScriptParams> {
     }
 
     //TODO accept lambda consumer of args. Do the same for DataParams
-    public InvokeScriptParams function(String name, Arg... args) {
-        this.call = Function.as(name, args);
+    public InvokeScriptParams function(Function call) {
+        this.call = call;
         return this;
+    }
+    public InvokeScriptParams function(String name, Arg... args) {
+        return function(Function.as(name, args));
     }
 
     public InvokeScriptParams defaultFunction() {

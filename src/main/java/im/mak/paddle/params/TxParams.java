@@ -12,8 +12,8 @@ import java.util.List;
 
 import static java.util.Collections.singletonList;
 
-@SuppressWarnings({"unchecked", "unused", "rawtypes"})
-public abstract class TxParams<T extends TxParams> {
+@SuppressWarnings({"unchecked", "unused"})
+public abstract class TxParams<T extends TxParams<?>> {
 
     protected final Account sender;
     protected long timestamp;
