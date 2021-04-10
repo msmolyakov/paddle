@@ -1,4 +1,4 @@
-package im.mak.paddle.actions;
+package im.mak.paddle.params;
 
 import im.mak.paddle.Account;
 import com.wavesplatform.transactions.MassTransferTransaction;
@@ -16,13 +16,13 @@ import static im.mak.paddle.Constants.EXTRA_FEE;
 import static im.mak.paddle.Constants.MIN_FEE;
 import static im.mak.paddle.Node.node;
 
-public class MassTransfer extends Action<MassTransfer> {
+public class MassTransferParams extends TxParams<MassTransferParams> {
 
-    public AssetId assetId;
-    public List<Transfer> transfers;
-    public Base58String attachment;
+    protected AssetId assetId;
+    protected List<Transfer> transfers;
+    protected Base58String attachment;
 
-    public MassTransfer(Account sender) {
+    public MassTransferParams(Account sender) {
         super(sender, MassTransferTransaction.MIN_FEE);
 
         this.transfers = new LinkedList<>();
@@ -30,44 +30,55 @@ public class MassTransfer extends Action<MassTransfer> {
         this.attachment = Base58String.empty();
     }
 
-    public MassTransfer assetId(AssetId assetId) {
+    public MassTransferParams assetId(AssetId assetId) {
         this.assetId = assetId;
         return this;
     }
 
-    public MassTransfer to(Recipient recipient, long amount) {
+    public MassTransferParams to(Recipient recipient, long amount) {
         this.transfers.add(Transfer.to(recipient, amount));
         return this;
     }
 
-    public MassTransfer to(Account recipient, long amount) {
+    public MassTransferParams to(Account recipient, long amount) {
         return to(recipient.address(), amount);
     }
 
-    public MassTransfer transfers(Transfer... transfers) {
+    public MassTransferParams transfers(Transfer... transfers) {
         this.transfers.addAll(Arrays.asList(transfers));
         return this;
     }
 
-    public MassTransfer attachment(Base58String message) {
+    public MassTransferParams attachment(Base58String message) {
         this.attachment = message;
         return this;
     }
 
-    public MassTransfer attachment(String message) {
-        return attachment(new Base58String(message.getBytes(StandardCharsets.UTF_8)));
+    public MassTransferParams attachmentUtf8(String utf8Message) {
+        return attachment(new Base58String(utf8Message.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    public AssetId getAssetId() {
+        return this.assetId;
+    }
+
+    public List<Transfer> getTransfers() {
+        return this.transfers;
+    }
+
+    public Base58String getAttachment() {
+        return this.attachment;
     }
 
     @Override
-    public long calcFee() {
-        if (feeAmount > 0)
-            return feeAmount;
+    public long getFee() {
+        long totalWavesFee = super.getFee();
 
-        long totalWavesFee = super.calcFee();
         if (!assetId.isWaves() && node().getAssetDetails(assetId).isScripted())
             totalWavesFee += EXTRA_FEE;
 
         totalWavesFee += ((transfers.size() + 1) / 2) * MIN_FEE;
+
         return totalWavesFee;
     }
 

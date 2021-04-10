@@ -1,4 +1,4 @@
-package im.mak.paddle.actions;
+package im.mak.paddle.params;
 
 import im.mak.paddle.Account;
 import com.wavesplatform.transactions.MassTransferTransaction;

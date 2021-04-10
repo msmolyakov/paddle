@@ -1,4 +1,4 @@
-package im.mak.paddle.actions;
+package im.mak.paddle.params;
 
 import im.mak.paddle.Account;
 import com.wavesplatform.transactions.SetScriptTransaction;
@@ -6,21 +6,25 @@ import com.wavesplatform.transactions.common.Base64String;
 
 import static im.mak.paddle.Node.node;
 
-public class SetScript extends Action<SetScript> {
+public class SetScriptParams extends TxParams<SetScriptParams> {
 
-    public Base64String compiledScript;
+    protected Base64String compiledScript;
 
-    public SetScript(Account sender) {
+    public SetScriptParams(Account sender) {
         super(sender, SetScriptTransaction.MIN_FEE);
     }
 
-    public SetScript compiledScript(Base64String compiled) {
+    public SetScriptParams compiledScript(Base64String compiled) {
         this.compiledScript = compiled;
         return this;
     }
 
-    public SetScript script(String sourceCode) {
+    public SetScriptParams script(String sourceCode) {
         return compiledScript(node().compileScript(sourceCode).script());
+    }
+
+    public Base64String getCompiledScript() {
+        return this.compiledScript;
     }
 
 }
