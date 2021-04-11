@@ -8,8 +8,8 @@ import com.wavesplatform.transactions.common.AssetId;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static im.mak.paddle.Async.async;
-import static im.mak.paddle.Constants.EXTRA_FEE;
+import static im.mak.paddle.util.Async.async;
+import static im.mak.paddle.util.Constants.EXTRA_FEE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 

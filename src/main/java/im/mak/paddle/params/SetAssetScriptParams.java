@@ -4,6 +4,7 @@ import im.mak.paddle.Account;
 import com.wavesplatform.transactions.SetAssetScriptTransaction;
 import com.wavesplatform.transactions.common.AssetId;
 import com.wavesplatform.transactions.common.Base64String;
+import im.mak.paddle.token.Asset;
 
 import static im.mak.paddle.Node.node;
 
@@ -19,6 +20,10 @@ public class SetAssetScriptParams extends TxParams<SetAssetScriptParams> {
     public SetAssetScriptParams assetId(AssetId assetId) {
         this.assetId = assetId;
         return this;
+    }
+
+    public SetAssetScriptParams asset(Asset asset) {
+        return assetId(asset.id());
     }
 
     public SetAssetScriptParams compiledScript(Base64String compiled) {

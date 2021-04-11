@@ -6,14 +6,15 @@ import com.wavesplatform.transactions.common.AssetId;
 import com.wavesplatform.transactions.common.Base58String;
 import com.wavesplatform.transactions.common.Recipient;
 import com.wavesplatform.transactions.mass.Transfer;
+import im.mak.paddle.token.Token;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import static im.mak.paddle.Constants.EXTRA_FEE;
-import static im.mak.paddle.Constants.MIN_FEE;
+import static im.mak.paddle.util.Constants.EXTRA_FEE;
+import static im.mak.paddle.util.Constants.MIN_FEE;
 import static im.mak.paddle.Node.node;
 
 public class MassTransferParams extends TxParams<MassTransferParams> {
@@ -33,6 +34,10 @@ public class MassTransferParams extends TxParams<MassTransferParams> {
     public MassTransferParams assetId(AssetId assetId) {
         this.assetId = assetId;
         return this;
+    }
+
+    public MassTransferParams asset(Token token) {
+        return assetId(token.id());
     }
 
     public MassTransferParams to(Recipient recipient, long amount) {

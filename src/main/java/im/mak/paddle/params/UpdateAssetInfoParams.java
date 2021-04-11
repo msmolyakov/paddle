@@ -3,8 +3,9 @@ package im.mak.paddle.params;
 import com.wavesplatform.transactions.UpdateAssetInfoTransaction;
 import com.wavesplatform.transactions.common.AssetId;
 import im.mak.paddle.Account;
+import im.mak.paddle.token.Asset;
 
-import static im.mak.paddle.Constants.EXTRA_FEE;
+import static im.mak.paddle.util.Constants.EXTRA_FEE;
 import static im.mak.paddle.Node.node;
 
 public class UpdateAssetInfoParams extends TxParams<UpdateAssetInfoParams> {
@@ -25,8 +26,8 @@ public class UpdateAssetInfoParams extends TxParams<UpdateAssetInfoParams> {
         return this;
     }
 
-    public UpdateAssetInfoParams assetId(String assetId) {
-        return assetId(AssetId.as(assetId));
+    public UpdateAssetInfoParams asset(Asset asset) {
+        return assetId(asset.id());
     }
 
     public UpdateAssetInfoParams name(String name) {

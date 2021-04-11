@@ -4,8 +4,9 @@ import com.wavesplatform.transactions.common.Amount;
 import im.mak.paddle.Account;
 import com.wavesplatform.transactions.ReissueTransaction;
 import com.wavesplatform.transactions.common.AssetId;
+import im.mak.paddle.token.Asset;
 
-import static im.mak.paddle.Constants.EXTRA_FEE;
+import static im.mak.paddle.util.Constants.EXTRA_FEE;
 import static im.mak.paddle.Node.node;
 
 public class ReissueParams extends TxParams<ReissueParams> {
@@ -27,6 +28,10 @@ public class ReissueParams extends TxParams<ReissueParams> {
 
     public ReissueParams amount(long amount, AssetId assetId) {
         return amount(Amount.of(amount, assetId));
+    }
+
+    public ReissueParams amount(long amount, Asset asset) {
+        return amount(amount, asset.id());
     }
 
     public ReissueParams reissuable(boolean reissuable) {

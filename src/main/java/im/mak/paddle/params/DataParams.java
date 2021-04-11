@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import static im.mak.paddle.Constants.MIN_FEE;
+import static im.mak.paddle.util.Constants.MIN_FEE;
 
 public class DataParams extends TxParams<DataParams> {
 

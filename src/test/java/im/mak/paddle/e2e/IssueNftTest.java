@@ -4,8 +4,8 @@ import im.mak.paddle.Account;
 import com.wavesplatform.transactions.common.AssetId;
 import org.junit.jupiter.api.*;
 
-import static im.mak.paddle.Constants.EXTRA_FEE;
-import static im.mak.paddle.Constants.MIN_FEE;
+import static im.mak.paddle.util.Constants.EXTRA_FEE;
+import static im.mak.paddle.util.Constants.MIN_FEE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 

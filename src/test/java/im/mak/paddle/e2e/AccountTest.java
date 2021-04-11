@@ -6,7 +6,7 @@ import com.wavesplatform.transactions.data.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static im.mak.paddle.Async.async;
+import static im.mak.paddle.util.Async.async;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 

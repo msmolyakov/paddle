@@ -1,7 +1,5 @@
 package im.mak.paddle.params;
 
-import com.wavesplatform.transactions.account.Address;
-import com.wavesplatform.transactions.common.Alias;
 import com.wavesplatform.wavesj.ScriptInfo;
 import im.mak.paddle.Account;
 import com.wavesplatform.transactions.InvokeScriptTransaction;
@@ -10,14 +8,16 @@ import com.wavesplatform.transactions.common.AssetId;
 import com.wavesplatform.transactions.common.Recipient;
 import com.wavesplatform.transactions.invocation.Arg;
 import com.wavesplatform.transactions.invocation.Function;
+import im.mak.paddle.token.Token;
+import im.mak.paddle.util.RecipientResolver;
 import im.mak.paddle.util.Script;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static im.mak.paddle.Constants.EXTRA_FEE;
-import static im.mak.paddle.Constants.MIN_FEE;
+import static im.mak.paddle.util.Constants.EXTRA_FEE;
+import static im.mak.paddle.util.Constants.MIN_FEE;
 import static im.mak.paddle.Node.node;
 
 public class InvokeScriptParams extends TxParams<InvokeScriptParams> {
@@ -72,6 +72,10 @@ public class InvokeScriptParams extends TxParams<InvokeScriptParams> {
         return payment(Amount.of(amount, assetId));
     }
 
+    public InvokeScriptParams payment(long amount, Token token) {
+        return payment(amount, token.id());
+    }
+
     public InvokeScriptParams wavesPayment(long amount) {
         return payment(amount, AssetId.WAVES);
     }
@@ -88,6 +92,10 @@ public class InvokeScriptParams extends TxParams<InvokeScriptParams> {
         }
     }
 
+    public InvokeScriptParams additionalFee(long amount, Token token) {
+        return this.additionalFee(amount, token.id());
+    }
+
     public InvokeScriptParams additionalFee(Amount amount) {
         return this.additionalFee(amount.value(), amount.assetId());
     }
@@ -100,6 +108,10 @@ public class InvokeScriptParams extends TxParams<InvokeScriptParams> {
     public InvokeScriptParams feeAssetId(AssetId assetId) {
         this.feeAssetId = assetId;
         return this;
+    }
+
+    public InvokeScriptParams feeAsset(Token token) {
+        return feeAssetId(token.id());
     }
 
     public Recipient getDApp() {
@@ -124,8 +136,7 @@ public class InvokeScriptParams extends TxParams<InvokeScriptParams> {
     public long getFee() {
         long totalWavesFee = super.getFee();
 
-        ScriptInfo scriptInfo = node().getScriptInfo(
-                dApp.type() == 1 ? (Address) dApp : node().getAddressByAlias((Alias) dApp));
+        ScriptInfo scriptInfo = node().getScriptInfo(RecipientResolver.toAddress(dApp));
         int rideVersion = Script.getRideVersion(scriptInfo.script());
 
         //TODO just request /debug/validate to consider Issue actions and actions with smart assets; remove javadoc

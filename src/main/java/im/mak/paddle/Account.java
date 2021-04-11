@@ -11,6 +11,8 @@ import com.wavesplatform.transactions.account.PrivateKey;
 import com.wavesplatform.transactions.account.PublicKey;
 import com.wavesplatform.transactions.common.*;
 import com.wavesplatform.transactions.data.*;
+import im.mak.paddle.token.Asset;
+import im.mak.paddle.token.Token;
 import org.apache.commons.lang.IllegalClassException;
 
 import java.util.List;
@@ -121,8 +123,20 @@ public class Account {
         return node().getAssetBalance(address(), assetId);
     }
 
+    public long getAssetBalance(Asset asset) {
+        return this.getAssetBalance(asset.id());
+    }
+
+    public long getBalance(Token token) {
+        return token.id().isWaves() ? getWavesBalance() : getAssetBalance((AssetId) token);
+    }
+
     public List<AssetDetails> getNft(int limit, AssetId after) {
         return node().getNft(address(), limit, after);
+    }
+
+    public List<AssetDetails> getNft(int limit, Asset after) {
+        return getNft(limit, after.id());
     }
 
     public List<AssetDetails> getNft(int limit) {

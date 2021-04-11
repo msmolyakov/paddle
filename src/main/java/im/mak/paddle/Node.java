@@ -18,6 +18,7 @@ import com.wavesplatform.transactions.Transaction;
 import com.wavesplatform.transactions.account.Address;
 import com.wavesplatform.transactions.common.*;
 import com.wavesplatform.transactions.data.DataEntry;
+import im.mak.paddle.internal.Settings;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -132,6 +133,10 @@ public class Node extends com.wavesplatform.wavesj.Node {
         }
     }
 
+    public int minAssetInfoUpdateInterval() {
+        return this.conf.minAssetInfoUpdateInterval;
+    }
+
     public Account faucet() {
         if (faucet == null)
             faucet = new Account(conf.faucetSeed);
@@ -225,7 +230,7 @@ public class Node extends com.wavesplatform.wavesj.Node {
         }
     }
 
-    @Override
+    @Override //TODO change to /transactions/info
     public TxDebugInfo getStateChanges(Id txId) {
         return throwErrorOrGet(() -> {
             TransactionDebugInfo info = super.getStateChanges(txId);
@@ -326,7 +331,7 @@ public class Node extends com.wavesplatform.wavesj.Node {
         return throwErrorOrGet(() -> super.getAssetDistribution(assetId, height, limit));
     }
 
-    @Override
+    @Override //TODO iterators and parsers for all limited requests
     public AssetDistribution getAssetDistribution(AssetId assetId, int height, int limit, Address after) {
         return throwErrorOrGet(() -> super.getAssetDistribution(assetId, height, limit, after));
     }

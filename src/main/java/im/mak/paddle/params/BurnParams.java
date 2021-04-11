@@ -4,8 +4,9 @@ import com.wavesplatform.transactions.common.Amount;
 import im.mak.paddle.Account;
 import com.wavesplatform.transactions.BurnTransaction;
 import com.wavesplatform.transactions.common.AssetId;
+import im.mak.paddle.token.Asset;
 
-import static im.mak.paddle.Constants.EXTRA_FEE;
+import static im.mak.paddle.util.Constants.EXTRA_FEE;
 import static im.mak.paddle.Node.node;
 
 public class BurnParams extends TxParams<BurnParams> {
@@ -27,13 +28,17 @@ public class BurnParams extends TxParams<BurnParams> {
         return amount(Amount.of(amount, assetId));
     }
 
+    public BurnParams amount(long amount, Asset asset) {
+        return amount(amount, asset.id());
+    }
+
     public Amount getAmount() {
         return this.amount;
     }
 
     @Override
     public long getFee() {
-        long extraFee = node().getAssetDetails(amount.assetId() ).isScripted() ? EXTRA_FEE : 0;
+        long extraFee = node().getAssetDetails(amount.assetId()).isScripted() ? EXTRA_FEE : 0;
         return super.getFee() + extraFee;
     }
 

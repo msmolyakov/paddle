@@ -6,11 +6,12 @@ import com.wavesplatform.transactions.common.Amount;
 import com.wavesplatform.transactions.common.AssetId;
 import com.wavesplatform.transactions.common.Base58String;
 import com.wavesplatform.transactions.common.Recipient;
+import im.mak.paddle.token.Token;
 
 import java.nio.charset.StandardCharsets;
 
-import static im.mak.paddle.Constants.EXTRA_FEE;
-import static im.mak.paddle.Constants.MIN_FEE;
+import static im.mak.paddle.util.Constants.EXTRA_FEE;
+import static im.mak.paddle.util.Constants.MIN_FEE;
 import static im.mak.paddle.Node.node;
 
 public class TransferParams extends TxParams<TransferParams> {
@@ -46,6 +47,10 @@ public class TransferParams extends TxParams<TransferParams> {
         return amount(Amount.of(amount, assetId));
     }
 
+    public TransferParams amount(long amount, Token token) {
+        return amount(amount, token.id());
+    }
+
     public TransferParams amount(long amount) {
         return amount(amount, AssetId.WAVES);
     }
@@ -71,6 +76,10 @@ public class TransferParams extends TxParams<TransferParams> {
         }
     }
 
+    public TransferParams additionalFee(long amount, Token token) {
+        return this.additionalFee(amount, token.id());
+    }
+
     public TransferParams additionalFee(Amount amount) {
         return this.additionalFee(amount.value(), amount.assetId());
     }
@@ -83,6 +92,10 @@ public class TransferParams extends TxParams<TransferParams> {
     public TransferParams feeAssetId(AssetId assetId) {
         this.feeAssetId = assetId;
         return this;
+    }
+
+    public TransferParams feeAsset(Token token) {
+        return feeAssetId(token.id());
     }
 
     public Recipient getRecipient() {

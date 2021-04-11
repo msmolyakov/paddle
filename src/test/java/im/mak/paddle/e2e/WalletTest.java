@@ -5,7 +5,7 @@ import im.mak.paddle.Account;
 import im.mak.paddle.dapps.Wallet;
 import org.junit.jupiter.api.*;
 
-import static im.mak.paddle.Async.async;
+import static im.mak.paddle.util.Async.async;
 import static im.mak.paddle.util.ScriptUtil.fromFile;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;

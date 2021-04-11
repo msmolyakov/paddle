@@ -3,6 +3,7 @@ package im.mak.paddle.params;
 import im.mak.paddle.Account;
 import com.wavesplatform.transactions.SponsorFeeTransaction;
 import com.wavesplatform.transactions.common.AssetId;
+import im.mak.paddle.token.Asset;
 
 //TODO action to cancel sponsorship
 
@@ -20,6 +21,10 @@ public class SponsorFeeParams extends TxParams<SponsorFeeParams> {
     public SponsorFeeParams assetId(AssetId assetId) {
         this.assetId = assetId;
         return this;
+    }
+
+    public SponsorFeeParams asset(Asset asset) {
+        return assetId(asset.id());
     }
 
     public SponsorFeeParams amountForMinFee(long assetAmount) {

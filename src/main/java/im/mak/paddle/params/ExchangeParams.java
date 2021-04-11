@@ -5,7 +5,7 @@ import com.wavesplatform.transactions.ExchangeTransaction;
 import com.wavesplatform.transactions.exchange.Order;
 import com.wavesplatform.transactions.exchange.OrderType;
 
-import static im.mak.paddle.Constants.EXTRA_FEE;
+import static im.mak.paddle.util.Constants.EXTRA_FEE;
 import static im.mak.paddle.Node.node;
 
 public class ExchangeParams extends TxParams<ExchangeParams> {
