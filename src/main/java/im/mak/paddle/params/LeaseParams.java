@@ -4,7 +4,7 @@ import im.mak.paddle.Account;
 import com.wavesplatform.transactions.LeaseTransaction;
 import com.wavesplatform.transactions.common.Recipient;
 
-public class LeaseParams extends TxParams<LeaseParams> {
+public class LeaseParams extends CommonParams<LeaseParams> {
 
     protected Recipient recipient;
     protected long amount;
@@ -25,14 +25,6 @@ public class LeaseParams extends TxParams<LeaseParams> {
     public LeaseParams amount(long amount) {
         this.amount = amount;
         return this;
-    }
-
-    public Recipient getRecipient() {
-        return this.recipient;
-    }
-
-    public long getAmount() {
-        return this.amount;
     }
 
 }

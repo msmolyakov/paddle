@@ -129,7 +129,7 @@ public class Node extends com.wavesplatform.wavesj.Node {
         } catch (NodeException e) {
             throw new ApiError(e.getErrorCode(), e.getMessage());
         } catch (Exception e) {
-            throw new Error(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -264,6 +264,16 @@ public class Node extends com.wavesplatform.wavesj.Node {
     @Override
     public long getBalance(Address address, int confirmations) {
         return throwErrorOrGet(() -> super.getBalance(address, confirmations));
+    }
+
+    @Override
+    public List<Balance> getBalances(List<Address> addresses) {
+        return throwErrorOrGet(() -> super.getBalances(addresses));
+    }
+
+    @Override
+    public List<Balance> getBalances(List<Address> addresses, int height) {
+        return throwErrorOrGet(() -> super.getBalances(addresses, height));
     }
 
     @Override

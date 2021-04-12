@@ -6,7 +6,7 @@ import com.wavesplatform.transactions.common.Base64String;
 
 import static im.mak.paddle.Node.node;
 
-public class SetScriptParams extends TxParams<SetScriptParams> {
+public class SetScriptParams extends CommonParams<SetScriptParams> {
 
     protected Base64String compiledScript;
 
@@ -21,10 +21,6 @@ public class SetScriptParams extends TxParams<SetScriptParams> {
 
     public SetScriptParams script(String sourceCode) {
         return compiledScript(node().compileScript(sourceCode).script());
-    }
-
-    public Base64String getCompiledScript() {
-        return this.compiledScript;
     }
 
 }

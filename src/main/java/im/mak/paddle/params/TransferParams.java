@@ -10,11 +10,9 @@ import im.mak.paddle.token.Token;
 
 import java.nio.charset.StandardCharsets;
 
-import static im.mak.paddle.util.Constants.EXTRA_FEE;
-import static im.mak.paddle.util.Constants.MIN_FEE;
 import static im.mak.paddle.Node.node;
 
-public class TransferParams extends TxParams<TransferParams> {
+public class TransferParams extends CommonParams<TransferParams> {
 
     protected Recipient recipient;
     protected Amount amount;
@@ -96,34 +94,6 @@ public class TransferParams extends TxParams<TransferParams> {
 
     public TransferParams feeAsset(Token token) {
         return feeAssetId(token.id());
-    }
-
-    public Recipient getRecipient() {
-        return this.recipient;
-    }
-
-    public Amount getAmount() {
-        return this.amount;
-    }
-
-    public Base58String getAttachment() {
-        return this.attachment;
-    }
-
-    @Override
-    public long getFee() {
-        long totalWavesFee = super.getFee();
-
-        if (!amount.assetId().isWaves() && node().getAssetDetails(amount.assetId()).isScripted())
-            totalWavesFee += EXTRA_FEE;
-
-        if (feeAssetId.isWaves())
-            return totalWavesFee;
-        else {
-            long minSponsoredFee = node().getAssetDetails(feeAssetId).minSponsoredAssetFee();
-            long increment = totalWavesFee % MIN_FEE == 0 ? 0 : minSponsoredFee;
-            return (totalWavesFee / MIN_FEE) * minSponsoredFee + increment;
-        }
     }
 
 }

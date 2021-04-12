@@ -13,7 +13,7 @@ import java.util.List;
 import static java.util.Collections.singletonList;
 
 @SuppressWarnings({"unchecked", "unused"})
-public abstract class TxParams<T extends TxParams<?>> {
+public class CommonParams<T extends CommonParams<?>> {
 
     protected final Account sender;
     protected long timestamp;
@@ -22,7 +22,7 @@ public abstract class TxParams<T extends TxParams<?>> {
     protected long additionalFee;
     protected List<Object> signersAndProofs;
 
-    protected TxParams(Account sender, long baseFee) {
+    protected CommonParams(Account sender, long baseFee) {
         this.sender = sender;
         this.baseFee = baseFee;
         this.signersAndProofs = new ArrayList<>(singletonList(sender.privateKey()));
@@ -71,23 +71,23 @@ public abstract class TxParams<T extends TxParams<?>> {
         return (T) this;
     }
 
-    public Account getSender() {
+    protected Account getSender() {
         return this.sender;
     }
 
-    public long getTimestamp() {
+    protected long getTimestamp() {
         return this.timestamp;
     }
 
-    public long getFee() {
+    protected long getFee() {
         return baseFee + sender.getScriptInfo().extraFee() + additionalFee;
     }
 
-    public AssetId getFeeAssetId() {
+    protected AssetId getFeeAssetId() {
         return this.feeAssetId;
     }
 
-    public List<Object> getSignersAndProofs() {
+    protected List<Object> getSignersAndProofs() {
         return this.signersAndProofs;
     }
 

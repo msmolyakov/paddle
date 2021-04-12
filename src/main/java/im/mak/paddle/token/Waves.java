@@ -9,30 +9,46 @@ import im.mak.paddle.util.RecipientResolver;
 
 import static im.mak.paddle.Node.node;
 
-public class Waves implements Token {
+public abstract class Waves implements Token {
 
     private static final AssetId ID = AssetId.WAVES;
     private static final int DECIMALS = 8;
 
-    @Override
-    public AssetId id() {
-        return ID;
-    }
+    public static final Waves WAVES = new Waves() {
+        @Override
+        public AssetId id() {
+            return ID;
+        }
+
+        @Override
+        public int decimals() {
+            return DECIMALS;
+        }
+
+        @Override
+        public long getQuantity() {
+            return node().getBlockchainRewards().totalWavesAmount();
+        }
+
+        @Override
+        public long getBalanceOf(Recipient recipient) {
+            return node().getBalance(RecipientResolver.toAddress(recipient));
+        }
+    };
+
+    private Waves() {}
 
     @Override
-    public int decimals() {
-        return DECIMALS;
-    }
+    abstract public AssetId id();
 
     @Override
-    public long getQuantity() {
-        return node().getBlockchainRewards().totalWavesAmount();
-    }
+    abstract public int decimals();
 
     @Override
-    public long getBalanceOf(Recipient recipient) {
-        return node().getBalance(RecipientResolver.toAddress(recipient));
-    }
+    abstract public long getQuantity();
+
+    @Override
+    abstract public long getBalanceOf(Recipient recipient);
 
     public BalanceDetails getBalanceDetailsOf(Recipient recipient) {
         return node().getBalanceDetails(RecipientResolver.toAddress(recipient));

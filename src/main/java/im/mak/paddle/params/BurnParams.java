@@ -6,10 +6,7 @@ import com.wavesplatform.transactions.BurnTransaction;
 import com.wavesplatform.transactions.common.AssetId;
 import im.mak.paddle.token.Asset;
 
-import static im.mak.paddle.util.Constants.EXTRA_FEE;
-import static im.mak.paddle.Node.node;
-
-public class BurnParams extends TxParams<BurnParams> {
+public class BurnParams extends CommonParams<BurnParams> {
 
     protected Amount amount;
 
@@ -30,16 +27,6 @@ public class BurnParams extends TxParams<BurnParams> {
 
     public BurnParams amount(long amount, Asset asset) {
         return amount(amount, asset.id());
-    }
-
-    public Amount getAmount() {
-        return this.amount;
-    }
-
-    @Override
-    public long getFee() {
-        long extraFee = node().getAssetDetails(amount.assetId()).isScripted() ? EXTRA_FEE : 0;
-        return super.getFee() + extraFee;
     }
 
 }

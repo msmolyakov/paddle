@@ -8,7 +8,7 @@ import java.util.Random;
 
 import static im.mak.paddle.Node.node;
 
-public class IssueNftParams extends TxParams<IssueNftParams> {
+public class IssueNftParams extends CommonParams<IssueNftParams> {
 
     protected String name;
     protected String description;
@@ -38,18 +38,6 @@ public class IssueNftParams extends TxParams<IssueNftParams> {
 
     public IssueNftParams script(String sourceCode) {
         return compiledScript(sourceCode == null ? Base64String.empty() : node().compileScript(sourceCode).script());
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public String getDescription() {
-        return this.description;
-    }
-
-    public Base64String getCompiledScript() {
-        return this.compiledScript;
     }
 
 }

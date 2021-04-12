@@ -3,12 +3,8 @@ package im.mak.paddle.params;
 import im.mak.paddle.Account;
 import com.wavesplatform.transactions.ExchangeTransaction;
 import com.wavesplatform.transactions.exchange.Order;
-import com.wavesplatform.transactions.exchange.OrderType;
 
-import static im.mak.paddle.util.Constants.EXTRA_FEE;
-import static im.mak.paddle.Node.node;
-
-public class ExchangeParams extends TxParams<ExchangeParams> {
+public class ExchangeParams extends CommonParams<ExchangeParams> {
 
     protected Order order1;
     protected Order order2;
@@ -54,57 +50,6 @@ public class ExchangeParams extends TxParams<ExchangeParams> {
     public ExchangeParams sellMatcherFee(long value) {
         this.sellMatcherFee = value;
         return this;
-    }
-
-    public long calcAmount() {
-        return amount > 0 ? amount : Math.min(order1.amount().value(), order2.amount().value());
-    }
-
-    public long calcPrice() {
-        return price > 0 ? price : getOrder(OrderType.BUY).price().value();
-    }
-
-    public Order getOrder(OrderType type) {
-        if (order1.type() == type)
-            return order1;
-        else if (order2.type() == type)
-            return order2;
-        else throw new IllegalStateException("Can't find order with type \"" + type.value() + "\"");
-    }
-
-    public Order getOrder1() {
-        return this.order1;
-    }
-
-    public Order getOrder2() {
-        return this.order2;
-    }
-
-    public long getAmount() {
-        return this.amount;
-    }
-
-    public long getPrice() {
-        return this.price;
-    }
-
-    public long getBuyMatcherFee() {
-        return this.buyMatcherFee;
-    }
-
-    public long getSellMatcherFee() {
-        return this.sellMatcherFee;
-    }
-
-    @Override
-    public long getFee() {
-        long totalWavesFee = super.getFee();
-
-        //TODO what about auto calc fee for orders?
-        totalWavesFee += node().getAssetDetails(order1.amount().assetId()).isScripted() ? EXTRA_FEE : 0;
-        totalWavesFee += node().getAssetDetails(order1.price().assetId()).isScripted() ? EXTRA_FEE : 0;
-
-        return totalWavesFee;
     }
 
 }

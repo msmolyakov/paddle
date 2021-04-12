@@ -7,7 +7,7 @@ import im.mak.paddle.token.Asset;
 
 //TODO action to cancel sponsorship
 
-public class SponsorFeeParams extends TxParams<SponsorFeeParams> {
+public class SponsorFeeParams extends CommonParams<SponsorFeeParams> {
 
     protected AssetId assetId;
     protected long minSponsoredAssetFee;
@@ -30,14 +30,6 @@ public class SponsorFeeParams extends TxParams<SponsorFeeParams> {
     public SponsorFeeParams amountForMinFee(long assetAmount) {
         this.minSponsoredAssetFee = assetAmount;
         return this;
-    }
-
-    public AssetId getAssetId() {
-        return this.assetId;
-    }
-
-    public long getMinSponsoredFee() {
-        return this.minSponsoredAssetFee;
     }
 
 }

@@ -4,7 +4,7 @@ import im.mak.paddle.Account;
 import com.wavesplatform.transactions.LeaseCancelTransaction;
 import com.wavesplatform.transactions.common.Id;
 
-public class LeaseCancelParams extends TxParams<LeaseCancelParams> {
+public class LeaseCancelParams extends CommonParams<LeaseCancelParams> {
 
     protected Id leaseId;
 
@@ -15,10 +15,6 @@ public class LeaseCancelParams extends TxParams<LeaseCancelParams> {
     public LeaseCancelParams leaseId(Id leaseId) {
         this.leaseId = leaseId;
         return this;
-    }
-
-    public Id getLeaseId() {
-        return this.leaseId;
     }
 
 }

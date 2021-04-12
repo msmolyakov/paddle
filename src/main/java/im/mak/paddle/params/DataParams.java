@@ -9,9 +9,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import static im.mak.paddle.util.Constants.MIN_FEE;
-
-public class DataParams extends TxParams<DataParams> {
+public class DataParams extends CommonParams<DataParams> {
 
     protected List<DataEntry> data;
 
@@ -53,22 +51,6 @@ public class DataParams extends TxParams<DataParams> {
     public DataParams data(DataEntry... data) {
         this.data.addAll(Arrays.asList(data));
         return this;
-    }
-
-    public List<DataEntry> getData() {
-        return this.data;
-    }
-
-    @Override
-    public long getFee() {
-        long totalWavesFee = super.getFee();
-
-        //calculation only by protobuf bytes, because latest version of DataTransaction is used by default
-        DataTransaction tx = DataTransaction.builder(data).sender(sender.publicKey()).getUnsigned();
-        int payloadSize = tx.toProtobuf().getTransaction().getDataTransaction().getSerializedSize();
-        totalWavesFee += ((payloadSize - 1) / 1024) * MIN_FEE;
-
-        return totalWavesFee;
     }
 
 }

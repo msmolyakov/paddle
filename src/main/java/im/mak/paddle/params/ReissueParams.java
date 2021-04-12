@@ -6,10 +6,7 @@ import com.wavesplatform.transactions.ReissueTransaction;
 import com.wavesplatform.transactions.common.AssetId;
 import im.mak.paddle.token.Asset;
 
-import static im.mak.paddle.util.Constants.EXTRA_FEE;
-import static im.mak.paddle.Node.node;
-
-public class ReissueParams extends TxParams<ReissueParams> {
+public class ReissueParams extends CommonParams<ReissueParams> {
 
     protected Amount amount;
     protected boolean reissuable;
@@ -37,21 +34,6 @@ public class ReissueParams extends TxParams<ReissueParams> {
     public ReissueParams reissuable(boolean reissuable) {
         this.reissuable = reissuable;
         return this;
-    }
-
-    public Amount getAmount() {
-        return this.amount;
-    }
-
-    public boolean isReissuable() {
-        return this.reissuable;
-    }
-
-    @Override
-    public long getFee() {
-        long totalWavesFee = super.getFee();
-        totalWavesFee += node().getAssetDetails(amount.assetId()).isScripted() ? EXTRA_FEE : 0;
-        return totalWavesFee;
     }
 
 }

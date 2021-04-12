@@ -4,7 +4,7 @@ import im.mak.paddle.Account;
 import com.wavesplatform.transactions.CreateAliasTransaction;
 import com.wavesplatform.transactions.common.Alias;
 
-public class CreateAliasParams extends TxParams<CreateAliasParams> {
+public class CreateAliasParams extends CommonParams<CreateAliasParams> {
 
     protected Alias alias;
 
@@ -19,10 +19,6 @@ public class CreateAliasParams extends TxParams<CreateAliasParams> {
 
     public CreateAliasParams alias(String alias) {
         return alias(Alias.as(alias));
-    }
-
-    public Alias getAlias() {
-        return this.alias;
     }
 
 }

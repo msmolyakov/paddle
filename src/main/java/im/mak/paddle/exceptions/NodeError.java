@@ -1,6 +1,6 @@
 package im.mak.paddle.exceptions;
 
-public class NodeError extends Error {
+public class NodeError extends RuntimeException {
 
     public NodeError(Throwable e) {
         super(e);

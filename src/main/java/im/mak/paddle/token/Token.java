@@ -14,7 +14,7 @@ public interface Token {
     long getBalanceOf(Recipient recipient);
 
     default long amount(double amount) {
-        return (long) (amount * (10L * decimals()));
+        return (long) (amount * (Math.pow(10L, decimals())));
     }
 
     default Amount of(double amount) {

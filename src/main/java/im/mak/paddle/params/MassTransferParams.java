@@ -13,11 +13,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import static im.mak.paddle.util.Constants.EXTRA_FEE;
-import static im.mak.paddle.util.Constants.MIN_FEE;
-import static im.mak.paddle.Node.node;
-
-public class MassTransferParams extends TxParams<MassTransferParams> {
+public class MassTransferParams extends CommonParams<MassTransferParams> {
 
     protected AssetId assetId;
     protected List<Transfer> transfers;
@@ -61,30 +57,6 @@ public class MassTransferParams extends TxParams<MassTransferParams> {
 
     public MassTransferParams attachmentUtf8(String utf8Message) {
         return attachment(new Base58String(utf8Message.getBytes(StandardCharsets.UTF_8)));
-    }
-
-    public AssetId getAssetId() {
-        return this.assetId;
-    }
-
-    public List<Transfer> getTransfers() {
-        return this.transfers;
-    }
-
-    public Base58String getAttachment() {
-        return this.attachment;
-    }
-
-    @Override
-    public long getFee() {
-        long totalWavesFee = super.getFee();
-
-        if (!assetId.isWaves() && node().getAssetDetails(assetId).isScripted())
-            totalWavesFee += EXTRA_FEE;
-
-        totalWavesFee += ((transfers.size() + 1) / 2) * MIN_FEE;
-
-        return totalWavesFee;
     }
 
 }

@@ -8,7 +8,7 @@ import java.util.Random;
 
 import static im.mak.paddle.Node.node;
 
-public class IssueParams extends TxParams<IssueParams> {
+public class IssueParams extends CommonParams<IssueParams> {
 
     protected String name;
     protected String description;
@@ -59,30 +59,6 @@ public class IssueParams extends TxParams<IssueParams> {
 
     public IssueParams script(String sourceCode) {
         return compiledScript(sourceCode == null ? null : node().compileScript(sourceCode).script());
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public String getDescription() {
-        return this.description;
-    }
-
-    public long getQuantity() {
-        return this.quantity;
-    }
-
-    public int getDecimals() {
-        return this.decimals;
-    }
-
-    public boolean isReissuable() {
-        return this.reissuable;
-    }
-
-    public Base64String getCompiledScript() {
-        return this.compiledScript;
     }
 
 }

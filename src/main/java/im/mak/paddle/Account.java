@@ -11,6 +11,7 @@ import com.wavesplatform.transactions.account.PrivateKey;
 import com.wavesplatform.transactions.account.PublicKey;
 import com.wavesplatform.transactions.common.*;
 import com.wavesplatform.transactions.data.*;
+import im.mak.paddle.params.readable.*;
 import im.mak.paddle.token.Asset;
 import im.mak.paddle.token.Token;
 import org.apache.commons.lang.IllegalClassException;
@@ -232,139 +233,198 @@ public class Account {
         return unsigned;
     }
 
-    private static <B extends Transaction.TransactionBuilder<?, ?>, P extends TxParams<?>>
-    Transaction setCommonFieldsAndGetSigned(P params, B builder) {
-        return signAndGet(params.getSignersAndProofs(),
-                builder.sender(params.getSender().publicKey())
-                        .fee(Amount.of(params.getFee(), params.getFeeAssetId()))
-                        .timestamp(params.getTimestamp() == 0 ? System.currentTimeMillis() : params.getTimestamp())
-                        .getUnsigned());
-    }
-
     /* TRANSACTIONS */
 
     public TxInfo<IssueTransaction> issue(Consumer<IssueParams> is) {
-        IssueParams issue = new IssueParams(this);
+        IssueParamsReadable issue = new IssueParamsReadable(this);
         is.accept(issue);
-        Transaction signedTx = setCommonFieldsAndGetSigned(issue,
+        Transaction signedTx = signAndGet(issue.getSignersAndProofs(),
                 IssueTransaction.builder(issue.getName(), issue.getQuantity(), issue.getDecimals())
                         .description(issue.getDescription())
                         .isReissuable(issue.isReissuable())
-                        .script(issue.getCompiledScript()));
+                        .script(issue.getCompiledScript())
+                        .sender(issue.getSender().publicKey())
+                        .fee(Amount.of(issue.getFee(), issue.getFeeAssetId()))
+                        .timestamp(issue.getTimestamp() == 0 ? System.currentTimeMillis() : issue.getTimestamp())
+                        .getUnsigned());
         return node().waitForTransaction(node().broadcast(signedTx).id(), IssueTransaction.class);
     }
 
     public TxInfo<IssueTransaction> issueNft(Consumer<IssueNftParams> is) {
-        IssueNftParams nft = new IssueNftParams(this);
+        IssueNftParamsReadable nft = new IssueNftParamsReadable(this);
         is.accept(nft);
-        Transaction signedTx = setCommonFieldsAndGetSigned(nft,
+        Transaction signedTx = signAndGet(nft.getSignersAndProofs(),
                 IssueTransaction.builderNFT(nft.getName())
                         .description(nft.getDescription())
-                        .script(nft.getCompiledScript()));
+                        .script(nft.getCompiledScript())
+                        .sender(nft.getSender().publicKey())
+                        .fee(Amount.of(nft.getFee(), nft.getFeeAssetId()))
+                        .timestamp(nft.getTimestamp() == 0 ? System.currentTimeMillis() : nft.getTimestamp())
+                        .getUnsigned());
         return node().waitForTransaction(node().broadcast(signedTx).id(), IssueTransaction.class);
     }
 
+    public TxInfo<IssueTransaction> issueNft() {
+        return issueNft(i -> {});
+    }
+
     public TxInfo<TransferTransaction> transfer(Consumer<TransferParams> t) {
-        TransferParams tr = new TransferParams(this);
+        TransferParamsReadable tr = new TransferParamsReadable(this);
         t.accept(tr);
-        Transaction signedTx = setCommonFieldsAndGetSigned(tr,
+        Transaction signedTx = signAndGet(tr.getSignersAndProofs(),
                 TransferTransaction.builder(tr.getRecipient(), tr.getAmount())
-                        .attachment(tr.getAttachment()));
+                        .attachment(tr.getAttachment())
+                        .sender(tr.getSender().publicKey())
+                        .fee(Amount.of(tr.getFee(), tr.getFeeAssetId()))
+                        .timestamp(tr.getTimestamp() == 0 ? System.currentTimeMillis() : tr.getTimestamp())
+                        .getUnsigned());
         return node().waitForTransaction(node().broadcast(signedTx).id(), TransferTransaction.class);
     }
 
     public TxInfo<ReissueTransaction> reissue(Consumer<ReissueParams> r) {
-        ReissueParams ri = new ReissueParams(this);
+        ReissueParamsReadable ri = new ReissueParamsReadable(this);
         r.accept(ri);
-        Transaction signedTx = setCommonFieldsAndGetSigned(ri,
+        Transaction signedTx = signAndGet(ri.getSignersAndProofs(),
                 ReissueTransaction.builder(ri.getAmount())
-                        .reissuable(ri.isReissuable()));
+                        .reissuable(ri.isReissuable())
+                        .sender(ri.getSender().publicKey())
+                        .fee(Amount.of(ri.getFee(), ri.getFeeAssetId()))
+                        .timestamp(ri.getTimestamp() == 0 ? System.currentTimeMillis() : ri.getTimestamp())
+                        .getUnsigned());
         return node().waitForTransaction(node().broadcast(signedTx).id(), ReissueTransaction.class);
     }
 
     public TxInfo<BurnTransaction> burn(Consumer<BurnParams> b) {
-        BurnParams bu = new BurnParams(this);
+        BurnParamsReadable bu = new BurnParamsReadable(this);
         b.accept(bu);
-        Transaction signedTx = setCommonFieldsAndGetSigned(bu, BurnTransaction.builder(bu.getAmount()));
+        Transaction signedTx = signAndGet(bu.getSignersAndProofs(),
+                BurnTransaction.builder(bu.getAmount())
+                        .sender(bu.getSender().publicKey())
+                        .fee(Amount.of(bu.getFee(), bu.getFeeAssetId()))
+                        .timestamp(bu.getTimestamp() == 0 ? System.currentTimeMillis() : bu.getTimestamp())
+                        .getUnsigned());
         return node().waitForTransaction(node().broadcast(signedTx).id(), BurnTransaction.class);
     }
 
     public TxInfo<ExchangeTransaction> exchange(Consumer<ExchangeParams> e) {
-        ExchangeParams ex = new ExchangeParams(this);
+        ExchangeParamsReadable ex = new ExchangeParamsReadable(this);
         e.accept(ex);
-        Transaction signedTx = setCommonFieldsAndGetSigned(ex,
-                ExchangeTransaction.builder(ex.getOrder1(), ex.getOrder2(), ex.getAmount(), ex.getPrice(),
-                        ex.getBuyMatcherFee(), ex.getSellMatcherFee()));
+        Transaction signedTx = signAndGet(ex.getSignersAndProofs(),
+                ExchangeTransaction.builder(ex.getOrder1(), ex.getOrder2(), ex.getAmount(), ex.getPrice(), ex.getBuyMatcherFee(), ex.getSellMatcherFee())
+                        .sender(ex.getSender().publicKey())
+                        .fee(Amount.of(ex.getFee(), ex.getFeeAssetId()))
+                        .timestamp(ex.getTimestamp() == 0 ? System.currentTimeMillis() : ex.getTimestamp())
+                        .getUnsigned());
         return node().waitForTransaction(node().broadcast(signedTx).id(), ExchangeTransaction.class);
     }
 
     public TxInfo<LeaseTransaction> lease(Consumer<LeaseParams> lease) {
-        LeaseParams l = new LeaseParams(this);
+        LeaseParamsReadable l = new LeaseParamsReadable(this);
         lease.accept(l);
-        Transaction signedTx = setCommonFieldsAndGetSigned(l,
-                LeaseTransaction.builder(l.getRecipient(), l.getAmount()));
+        Transaction signedTx = signAndGet(l.getSignersAndProofs(),
+                LeaseTransaction.builder(l.getRecipient(), l.getAmount())
+                        .sender(l.getSender().publicKey())
+                        .fee(Amount.of(l.getFee(), l.getFeeAssetId()))
+                        .timestamp(l.getTimestamp() == 0 ? System.currentTimeMillis() : l.getTimestamp())
+                        .getUnsigned());
         return node().waitForTransaction(node().broadcast(signedTx).id(), LeaseTransaction.class);
     }
 
     public TxInfo<LeaseCancelTransaction> cancelLease(Consumer<LeaseCancelParams> l) {
-        LeaseCancelParams lc = new LeaseCancelParams(this);
+        LeaseCancelParamsReadable lc = new LeaseCancelParamsReadable(this);
         l.accept(lc);
-        Transaction signedTx = setCommonFieldsAndGetSigned(lc, LeaseCancelTransaction.builder(lc.getLeaseId()));
+        Transaction signedTx = signAndGet(lc.getSignersAndProofs(),
+                LeaseCancelTransaction.builder(lc.getLeaseId())
+                        .sender(lc.getSender().publicKey())
+                        .fee(Amount.of(lc.getFee(), lc.getFeeAssetId()))
+                        .timestamp(lc.getTimestamp() == 0 ? System.currentTimeMillis() : lc.getTimestamp())
+                        .getUnsigned());
         return node().waitForTransaction(node().broadcast(signedTx).id(), LeaseCancelTransaction.class);
     }
 
     public TxInfo<CreateAliasTransaction> createAlias(Consumer<CreateAliasParams> a) {
-        CreateAliasParams ca = new CreateAliasParams(this);
+        CreateAliasParamsReadable ca = new CreateAliasParamsReadable(this);
         a.accept(ca);
-        Transaction signedTx = setCommonFieldsAndGetSigned(ca, CreateAliasTransaction.builder(ca.getAlias().toString()));
+        Transaction signedTx = signAndGet(ca.getSignersAndProofs(),
+                CreateAliasTransaction.builder(ca.getAlias().toString())
+                        .sender(ca.getSender().publicKey())
+                        .fee(Amount.of(ca.getFee(), ca.getFeeAssetId()))
+                        .timestamp(ca.getTimestamp() == 0 ? System.currentTimeMillis() : ca.getTimestamp())
+                        .getUnsigned());
         return node().waitForTransaction(node().broadcast(signedTx).id(), CreateAliasTransaction.class);
     }
 
     public TxInfo<MassTransferTransaction> massTransfer(Consumer<MassTransferParams> m) {
-        MassTransferParams mt = new MassTransferParams(this);
+        MassTransferParamsReadable mt = new MassTransferParamsReadable(this);
         m.accept(mt);
-        Transaction signedTx = setCommonFieldsAndGetSigned(mt,
+        Transaction signedTx = signAndGet(mt.getSignersAndProofs(),
                 MassTransferTransaction.builder(mt.getTransfers())
                         .assetId(mt.getAssetId())
-                        .attachment(mt.getAttachment()));
+                        .attachment(mt.getAttachment())
+                        .sender(mt.getSender().publicKey())
+                        .fee(Amount.of(mt.getFee(), mt.getFeeAssetId()))
+                        .timestamp(mt.getTimestamp() == 0 ? System.currentTimeMillis() : mt.getTimestamp())
+                        .getUnsigned());
         return node().waitForTransaction(node().broadcast(signedTx).id(), MassTransferTransaction.class);
     }
 
     public TxInfo<DataTransaction> writeData(Consumer<DataParams> d) {
-        DataParams wd = new DataParams(this);
+        DataParamsReadable wd = new DataParamsReadable(this);
         d.accept(wd);
-        Transaction signedTx = setCommonFieldsAndGetSigned(wd, DataTransaction.builder(wd.getData()));
+        Transaction signedTx = signAndGet(wd.getSignersAndProofs(),
+                DataTransaction.builder(wd.getData())
+                        .sender(wd.getSender().publicKey())
+                        .fee(Amount.of(wd.getFee(), wd.getFeeAssetId()))
+                        .timestamp(wd.getTimestamp() == 0 ? System.currentTimeMillis() : wd.getTimestamp())
+                        .getUnsigned());
         return node().waitForTransaction(node().broadcast(signedTx).id(), DataTransaction.class);
     }
 
     public TxInfo<SetScriptTransaction> setScript(Consumer<SetScriptParams> s) {
-        SetScriptParams ss = new SetScriptParams(this);
+        SetScriptParamsReadable ss = new SetScriptParamsReadable(this);
         s.accept(ss);
-        Transaction signedTx = setCommonFieldsAndGetSigned(ss, SetScriptTransaction.builder(ss.getCompiledScript()));
+        Transaction signedTx = signAndGet(ss.getSignersAndProofs(),
+                SetScriptTransaction.builder(ss.getCompiledScript())
+                        .sender(ss.getSender().publicKey())
+                        .fee(Amount.of(ss.getFee(), ss.getFeeAssetId()))
+                        .timestamp(ss.getTimestamp() == 0 ? System.currentTimeMillis() : ss.getTimestamp())
+                        .getUnsigned());
         return node().waitForTransaction(node().broadcast(signedTx).id(), SetScriptTransaction.class);
     }
 
     public TxInfo<SponsorFeeTransaction> sponsorFee(Consumer<SponsorFeeParams> s) {
-        SponsorFeeParams sf = new SponsorFeeParams(this);
+        SponsorFeeParamsReadable sf = new SponsorFeeParamsReadable(this);
         s.accept(sf);
-        Transaction signedTx = setCommonFieldsAndGetSigned(sf,
-                SponsorFeeTransaction.builder(sf.getAssetId(), sf.getMinSponsoredFee()));
+        Transaction signedTx = signAndGet(sf.getSignersAndProofs(),
+                SponsorFeeTransaction.builder(sf.getAssetId(), sf.getMinSponsoredFee())
+                        .sender(sf.getSender().publicKey())
+                        .fee(Amount.of(sf.getFee(), sf.getFeeAssetId()))
+                        .timestamp(sf.getTimestamp() == 0 ? System.currentTimeMillis() : sf.getTimestamp())
+                        .getUnsigned());
         return node().waitForTransaction(node().broadcast(signedTx).id(), SponsorFeeTransaction.class);
     }
 
     public TxInfo<SetAssetScriptTransaction> setAssetScript(Consumer<SetAssetScriptParams> s) {
-        SetAssetScriptParams sa = new SetAssetScriptParams(this);
+        SetAssetScriptParamsReadable sa = new SetAssetScriptParamsReadable(this);
         s.accept(sa);
-        Transaction signedTx = setCommonFieldsAndGetSigned(sa,
-                SetAssetScriptTransaction.builder(sa.getAssetId(), sa.getCompiledScript()));
+        Transaction signedTx = signAndGet(sa.getSignersAndProofs(),
+                SetAssetScriptTransaction.builder(sa.getAssetId(), sa.getCompiledScript())
+                        .sender(sa.getSender().publicKey())
+                        .fee(Amount.of(sa.getFee(), sa.getFeeAssetId()))
+                        .timestamp(sa.getTimestamp() == 0 ? System.currentTimeMillis() : sa.getTimestamp())
+                        .getUnsigned());
         return node().waitForTransaction(node().broadcast(signedTx).id(), SetAssetScriptTransaction.class);
     }
 
     public TxInfo<InvokeScriptTransaction> invoke(Consumer<InvokeScriptParams> i) {
-        InvokeScriptParams is = new InvokeScriptParams(this);
+        InvokeScriptParamsReadable is = new InvokeScriptParamsReadable(this);
         i.accept(is);
-        Transaction signedTx = setCommonFieldsAndGetSigned(is,
-                InvokeScriptTransaction.builder(is.getDApp(), is.getCall()).payments(is.getPayments()));
+        Transaction signedTx = signAndGet(is.getSignersAndProofs(),
+                InvokeScriptTransaction.builder(is.getDApp(), is.getCall()).payments(is.getPayments())
+                        .sender(is.getSender().publicKey())
+                        .fee(Amount.of(is.getFee(), is.getFeeAssetId()))
+                        .timestamp(is.getTimestamp() == 0 ? System.currentTimeMillis() : is.getTimestamp())
+                        .getUnsigned());
         return node().waitForTransaction(node().broadcast(signedTx).id(), InvokeScriptTransaction.class);
     }
 
@@ -377,10 +437,14 @@ public class Account {
     }
 
     public TxInfo<UpdateAssetInfoTransaction> updateAssetInfo(Consumer<UpdateAssetInfoParams> u) {
-        UpdateAssetInfoParams uai = new UpdateAssetInfoParams(this);
+        UpdateAssetInfoParamsReadable uai = new UpdateAssetInfoParamsReadable(this);
         u.accept(uai);
-        Transaction signedTx = setCommonFieldsAndGetSigned(uai,
-                UpdateAssetInfoTransaction.builder(uai.getAssetId(), uai.getName(), uai.getDescription()));
+        Transaction signedTx = signAndGet(uai.getSignersAndProofs(),
+                UpdateAssetInfoTransaction.builder(uai.getAssetId(), uai.getName(), uai.getDescription())
+                        .sender(uai.getSender().publicKey())
+                        .fee(Amount.of(uai.getFee(), uai.getFeeAssetId()))
+                        .timestamp(uai.getTimestamp() == 0 ? System.currentTimeMillis() : uai.getTimestamp())
+                        .getUnsigned());
         return node().waitForTransaction(node().broadcast(signedTx).id(), UpdateAssetInfoTransaction.class);
     }
 
