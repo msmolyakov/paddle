@@ -62,6 +62,4 @@ public abstract class Waves implements Token {
         return getBalanceDetailsOf(account.privateKey());
     }
 
-    //TODO getDistribution(height)
-
 }

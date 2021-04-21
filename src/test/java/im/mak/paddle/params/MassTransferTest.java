@@ -37,11 +37,11 @@ class MassTransferTest {
                 },
                 () -> {
                     dave = new Account(100000);
-                    dave.createAlias(a -> a.alias(aliasShort.name()));
+                    dave.createAlias(aliasShort);
                 },
                 () -> {
                     eve = new Account(100000);
-                    eve.createAlias(a -> a.alias(aliasLong.name()));
+                    eve.createAlias(aliasLong.name());
                 }
         );
     }

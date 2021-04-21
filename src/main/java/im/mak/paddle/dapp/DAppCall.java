@@ -1,4 +1,4 @@
-package im.mak.paddle.invocation;
+package im.mak.paddle.dapp;
 
 import com.wavesplatform.transactions.common.Recipient;
 import com.wavesplatform.transactions.invocation.Function;

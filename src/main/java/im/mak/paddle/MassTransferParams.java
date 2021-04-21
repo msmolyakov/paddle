@@ -1,6 +1,5 @@
-package im.mak.paddle.params;
+package im.mak.paddle;
 
-import im.mak.paddle.Account;
 import com.wavesplatform.transactions.MassTransferTransaction;
 import com.wavesplatform.transactions.common.AssetId;
 import com.wavesplatform.transactions.common.Base58String;
@@ -13,18 +12,34 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import static im.mak.paddle.Node.node;
+import static im.mak.paddle.util.Constants.EXTRA_FEE;
+import static im.mak.paddle.util.Constants.MIN_FEE;
+
 public class MassTransferParams extends CommonParams<MassTransferParams> {
 
     protected AssetId assetId;
     protected List<Transfer> transfers;
     protected Base58String attachment;
 
-    public MassTransferParams(Account sender) {
+    protected MassTransferParams(Account sender) {
         super(sender, MassTransferTransaction.MIN_FEE);
 
         this.transfers = new LinkedList<>();
         this.assetId = AssetId.WAVES;
         this.attachment = Base58String.empty();
+    }
+
+    @Override
+    protected long getFee() {
+        long totalWavesFee = super.getFee();
+
+        if (!assetId.isWaves() && node().getAssetDetails(assetId).isScripted())
+            totalWavesFee += EXTRA_FEE;
+
+        totalWavesFee += ((transfers.size() + 1) / 2) * MIN_FEE;
+
+        return totalWavesFee;
     }
 
     public MassTransferParams assetId(AssetId assetId) {

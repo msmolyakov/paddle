@@ -1,8 +1,8 @@
-package im.mak.paddle.params;
+package im.mak.paddle;
 
-import im.mak.paddle.Account;
 import com.wavesplatform.transactions.IssueTransaction;
 import com.wavesplatform.transactions.common.Base64String;
+import im.mak.paddle.util.Script;
 
 import java.util.Random;
 
@@ -14,10 +14,10 @@ public class IssueNftParams extends CommonParams<IssueNftParams> {
     protected String description;
     protected Base64String compiledScript;
 
-    public IssueNftParams(Account sender) {
+    protected IssueNftParams(Account sender) {
         super(sender, IssueTransaction.NFT_MIN_FEE);
 
-        this.name = "NFT " + new Random().nextInt(100000);
+        this.name = "NFT " + new Random().nextInt(1000000);
         this.description = "";
     }
 
@@ -37,7 +37,11 @@ public class IssueNftParams extends CommonParams<IssueNftParams> {
     }
 
     public IssueNftParams script(String sourceCode) {
-        return compiledScript(sourceCode == null ? Base64String.empty() : node().compileScript(sourceCode).script());
+        if (sourceCode == null)
+            return compiledScript(Base64String.empty());
+
+        String script = Script.setAssetType(sourceCode);
+        return compiledScript(node().compileScript(script).script());
     }
 
 }

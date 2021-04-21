@@ -1,8 +1,8 @@
-package im.mak.paddle.params;
+package im.mak.paddle;
 
-import im.mak.paddle.Account;
 import com.wavesplatform.transactions.IssueTransaction;
 import com.wavesplatform.transactions.common.Base64String;
+import im.mak.paddle.util.Script;
 
 import java.util.Random;
 
@@ -17,10 +17,10 @@ public class IssueParams extends CommonParams<IssueParams> {
     protected boolean reissuable;
     protected Base64String compiledScript;
 
-    public IssueParams(Account sender) {
+    protected IssueParams(Account sender) {
         super(sender, IssueTransaction.MIN_FEE);
 
-        this.name = "Asset " + new Random().nextInt(1000);
+        this.name = "Asset " + new Random().nextInt(10000);
         this.description = "";
         this.quantity = 100000000_00000000L;
         this.decimals = 8;
@@ -58,7 +58,11 @@ public class IssueParams extends CommonParams<IssueParams> {
     }
 
     public IssueParams script(String sourceCode) {
-        return compiledScript(sourceCode == null ? null : node().compileScript(sourceCode).script());
+        if (sourceCode == null)
+            return compiledScript(Base64String.empty());
+
+        String script = Script.setAssetType(sourceCode);
+        return compiledScript(node().compileScript(script).script());
     }
 
 }

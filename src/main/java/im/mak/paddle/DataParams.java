@@ -1,6 +1,5 @@
-package im.mak.paddle.params;
+package im.mak.paddle;
 
-import im.mak.paddle.Account;
 import com.wavesplatform.transactions.DataTransaction;
 import com.wavesplatform.transactions.common.Base64String;
 import com.wavesplatform.transactions.data.*;
@@ -9,14 +8,28 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import static im.mak.paddle.util.Constants.MIN_FEE;
+
 public class DataParams extends CommonParams<DataParams> {
 
     protected List<DataEntry> data;
 
-    public DataParams(Account sender) {
+    protected DataParams(Account sender) {
         super(sender, DataTransaction.MIN_FEE);
 
         this.data = new LinkedList<>();
+    }
+
+    @Override
+    protected long getFee() {
+        long totalWavesFee = super.getFee();
+
+        //calculation only by protobuf bytes, because latest version of DataTransaction is used by default
+        DataTransaction tx = DataTransaction.builder(data).sender(sender.publicKey()).getUnsigned();
+        int payloadSize = tx.toProtobuf().getTransaction().getDataTransaction().getSerializedSize();
+        totalWavesFee += ((payloadSize - 1) / 1024) * MIN_FEE;
+
+        return totalWavesFee;
     }
 
     public DataParams binary(String key, Base64String value) {

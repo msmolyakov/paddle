@@ -1,37 +1,27 @@
-package im.mak.paddle.params.readable;
+package im.mak.paddle;
 
 import com.wavesplatform.transactions.common.Amount;
-import com.wavesplatform.transactions.common.AssetId;
 import com.wavesplatform.transactions.common.Recipient;
+import com.wavesplatform.transactions.invocation.Arg;
 import com.wavesplatform.transactions.invocation.Function;
 import com.wavesplatform.wavesj.ScriptInfo;
-import im.mak.paddle.Account;
-import im.mak.paddle.params.InvokeScriptParams;
 import im.mak.paddle.util.RecipientResolver;
 import im.mak.paddle.util.Script;
-
-import java.util.List;
 
 import static im.mak.paddle.Node.node;
 import static im.mak.paddle.util.Constants.EXTRA_FEE;
 import static im.mak.paddle.util.Constants.MIN_FEE;
 
-public class InvokeScriptParamsReadable extends InvokeScriptParams {
+public class InvokeScriptParams extends InvokeScriptParamsOptional {
 
-    public InvokeScriptParamsReadable(Account sender) {
+    protected Recipient dApp;
+    protected Function functions;
+
+    protected InvokeScriptParams(Account sender) {
         super(sender);
-    }
 
-    public Recipient getDApp() {
-        return this.dApp;
-    }
-
-    public Function getCall() {
-        return this.call;
-    }
-
-    public List<Amount> getPayments() {
-        return this.payments;
+        this.dApp = sender.address();
+        defaultFunction();
     }
 
     /**
@@ -41,7 +31,7 @@ public class InvokeScriptParamsReadable extends InvokeScriptParams {
      * `invoke.extraFee(EXTRA_FEE)`
      */
     @Override
-    public long getFee() {
+    protected long getFee() {
         long totalWavesFee = super.getFee();
 
         ScriptInfo scriptInfo = node().getScriptInfo(RecipientResolver.toAddress(dApp));
@@ -50,8 +40,8 @@ public class InvokeScriptParamsReadable extends InvokeScriptParams {
         //TODO just request /debug/validate to consider Issue actions and actions with smart assets; remove javadoc
         if (rideVersion <= 4) {
             for (Amount payment : payments)
-                if (!payment.assetId().isWaves())
-                    totalWavesFee += node().getAssetDetails(payment.assetId()).isScripted() ? EXTRA_FEE : 0;
+                if (!payment.assetId().isWaves() && node().getAssetDetails(payment.assetId()).isScripted())
+                    totalWavesFee += EXTRA_FEE;
         }
 
         if (feeAssetId.isWaves())
@@ -63,26 +53,26 @@ public class InvokeScriptParamsReadable extends InvokeScriptParams {
         }
     }
 
-    /* COMMON PARAMS */
-
-    @Override
-    public Account getSender() {
-        return super.getSender();
+    public InvokeScriptParams dApp(Recipient addressOrAlias) {
+        this.dApp = addressOrAlias;
+        return this;
     }
 
-    @Override
-    public long getTimestamp() {
-        return super.getTimestamp();
+    public InvokeScriptParams dApp(Account account) {
+        return dApp(account.address());
     }
 
-    @Override
-    public AssetId getFeeAssetId() {
-        return super.getFeeAssetId();
+    public InvokeScriptParams function(Function function) {
+        this.functions = function;
+        return this;
+    }
+    public InvokeScriptParams function(String name, Arg... args) {
+        return function(Function.as(name, args));
     }
 
-    @Override
-    public List<Object> getSignersAndProofs() {
-        return super.getSignersAndProofs();
+    public InvokeScriptParams defaultFunction() {
+        this.functions = Function.asDefault();
+        return this;
     }
 
 }

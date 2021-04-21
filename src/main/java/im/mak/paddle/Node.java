@@ -7,6 +7,7 @@ import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.PortBinding;
+import com.wavesplatform.transactions.account.PrivateKey;
 import com.wavesplatform.wavesj.*;
 import com.wavesplatform.wavesj.exceptions.NodeException;
 import im.mak.paddle.api.TxDebugInfo;
@@ -139,7 +140,7 @@ public class Node extends com.wavesplatform.wavesj.Node {
 
     public Account faucet() {
         if (faucet == null)
-            faucet = new Account(conf.faucetSeed);
+            faucet = new Account(PrivateKey.fromSeed(conf.faucetSeed));
         return faucet;
     }
 

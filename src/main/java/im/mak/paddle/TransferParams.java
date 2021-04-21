@@ -1,56 +1,48 @@
-package im.mak.paddle.params;
+package im.mak.paddle;
 
-import im.mak.paddle.Account;
 import com.wavesplatform.transactions.TransferTransaction;
 import com.wavesplatform.transactions.common.Amount;
 import com.wavesplatform.transactions.common.AssetId;
 import com.wavesplatform.transactions.common.Base58String;
-import com.wavesplatform.transactions.common.Recipient;
-import im.mak.paddle.token.Token;
 
 import java.nio.charset.StandardCharsets;
 
 import static im.mak.paddle.Node.node;
+import static im.mak.paddle.util.Constants.EXTRA_FEE;
+import static im.mak.paddle.util.Constants.MIN_FEE;
 
 public class TransferParams extends CommonParams<TransferParams> {
 
-    protected Recipient recipient;
-    protected Amount amount;
+    protected AssetId assetId;
     protected Base58String attachment;
 
-    public TransferParams(Account sender) {
+    protected TransferParams(Account sender) {
         super(sender, TransferTransaction.MIN_FEE);
 
-        this.recipient = this.sender.address();
-        this.amount = Amount.of(0);
+        this.assetId = AssetId.WAVES;
         this.attachment = Base58String.empty();
         this.feeAssetId = AssetId.WAVES;
     }
 
-    public TransferParams to(Recipient recipient) {
-        this.recipient = recipient;
+    @Override
+    protected long getFee() {
+        long totalWavesFee = super.getFee();
+
+        if (!assetId.isWaves() && node().getAssetDetails(assetId).isScripted())
+            totalWavesFee += EXTRA_FEE;
+
+        if (feeAssetId.isWaves())
+            return totalWavesFee;
+        else {
+            long minSponsoredFee = node().getAssetDetails(feeAssetId).minSponsoredAssetFee();
+            long increment = totalWavesFee % MIN_FEE == 0 ? 0 : minSponsoredFee;
+            return (totalWavesFee / MIN_FEE) * minSponsoredFee + increment;
+        }
+    }
+
+    protected TransferParams assetId(AssetId assetId) {
+        this.assetId = assetId;
         return this;
-    }
-
-    public TransferParams to(Account account) {
-        return to(account.address());
-    }
-
-    public TransferParams amount(Amount amount) {
-        this.amount = amount;
-        return this;
-    }
-
-    public TransferParams amount(long amount, AssetId assetId) {
-        return amount(Amount.of(amount, assetId));
-    }
-
-    public TransferParams amount(long amount, Token token) {
-        return amount(amount, token.id());
-    }
-
-    public TransferParams amount(long amount) {
-        return amount(amount, AssetId.WAVES);
     }
 
     public TransferParams attachment(Base58String message) {
@@ -74,10 +66,6 @@ public class TransferParams extends CommonParams<TransferParams> {
         }
     }
 
-    public TransferParams additionalFee(long amount, Token token) {
-        return this.additionalFee(amount, token.id());
-    }
-
     public TransferParams additionalFee(Amount amount) {
         return this.additionalFee(amount.value(), amount.assetId());
     }
@@ -90,10 +78,6 @@ public class TransferParams extends CommonParams<TransferParams> {
     public TransferParams feeAssetId(AssetId assetId) {
         this.feeAssetId = assetId;
         return this;
-    }
-
-    public TransferParams feeAsset(Token token) {
-        return feeAssetId(token.id());
     }
 
 }
