@@ -1,5 +1,6 @@
 package im.mak.paddle;
 
+import im.mak.paddle.util.Async;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

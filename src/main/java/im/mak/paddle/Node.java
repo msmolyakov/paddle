@@ -7,6 +7,7 @@ import com.spotify.docker.client.exceptions.DockerException;
 import com.spotify.docker.client.messages.ContainerConfig;
 import com.spotify.docker.client.messages.HostConfig;
 import com.spotify.docker.client.messages.PortBinding;
+import com.wavesplatform.transactions.account.PrivateKey;
 import com.wavesplatform.wavesj.*;
 import com.wavesplatform.wavesj.exceptions.NodeException;
 import im.mak.paddle.api.TxDebugInfo;
@@ -18,12 +19,14 @@ import com.wavesplatform.transactions.Transaction;
 import com.wavesplatform.transactions.account.Address;
 import com.wavesplatform.transactions.common.*;
 import com.wavesplatform.transactions.data.DataEntry;
+import im.mak.paddle.internal.Settings;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
 import static java.util.Collections.singletonList;
@@ -119,8 +122,25 @@ public class Node extends com.wavesplatform.wavesj.Node {
         return conf.apiUrl;
     }
 
+    private static <T> T throwErrorOrGet(Callable<T> mightThrowException) {
+        try {
+            return mightThrowException.call();
+        } catch (IOException e) {
+            throw new NodeError(e);
+        } catch (NodeException e) {
+            throw new ApiError(e.getErrorCode(), e.getMessage());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public int minAssetInfoUpdateInterval() {
+        return this.conf.minAssetInfoUpdateInterval;
+    }
+
     public Account faucet() {
-        if (faucet == null) faucet = new Account(conf.faucetSeed);
+        if (faucet == null)
+            faucet = new Account(PrivateKey.fromSeed(conf.faucetSeed));
         return faucet;
     }
 
@@ -142,6 +162,7 @@ public class Node extends com.wavesplatform.wavesj.Node {
         throw new NodeError("Could not wait for transaction " + id + " in " + waitingInSeconds + " seconds");
     }
 
+    //TODO move all waiting functions to WavesJ
     public TransactionInfo waitForTransaction(Id id) {
         return waitForTransaction(id, (int)(conf.blockInterval / 1000));
     }
@@ -198,6 +219,7 @@ public class Node extends com.wavesplatform.wavesj.Node {
         return waitNBlocks(blocksCount, (int)(conf.blockInterval * 3 / 1000));
     }
 
+    //TODO move to WavesJ
     public <T extends Transaction> TxInfo<T> getTransactionInfo(Id txId, Class<T> txClass) {
         try {
             TransactionInfo info = super.getTransactionInfo(txId);
@@ -209,686 +231,329 @@ public class Node extends com.wavesplatform.wavesj.Node {
         }
     }
 
-    @Override
+    @Override //TODO change to /transactions/info
     public TxDebugInfo getStateChanges(Id txId) {
-        try {
+        return throwErrorOrGet(() -> {
             TransactionDebugInfo info = super.getStateChanges(txId);
             return new TxDebugInfo(info.tx(), info.applicationStatus(), info.height(), info.stateChanges());
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        });
     }
 
+    //TODO move to WavesJ
     public <T extends Transaction> T getUnconfirmedTransaction(Id txId, Class<T> txClass) {
-        try {
+        return throwErrorOrGet(() -> {
             Transaction tx = super.getUnconfirmedTransaction(txId);
             return (T) tx;
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        });
     }
 
     @Override
     public List<Address> getAddresses() {
-        try {
-            return super.getAddresses();
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(super::getAddresses);
     }
 
     @Override
     public List<Address> getAddresses(int fromIndex, int toIndex) {
-        try {
-            return super.getAddresses(fromIndex, toIndex);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getAddresses(fromIndex, toIndex));
     }
 
     @Override
     public long getBalance(Address address) {
-        try {
-            return super.getBalance(address);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getBalance(address));
     }
 
     @Override
     public long getBalance(Address address, int confirmations) {
-        try {
-            return super.getBalance(address, confirmations);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getBalance(address, confirmations));
+    }
+
+    @Override
+    public List<Balance> getBalances(List<Address> addresses) {
+        return throwErrorOrGet(() -> super.getBalances(addresses));
+    }
+
+    @Override
+    public List<Balance> getBalances(List<Address> addresses, int height) {
+        return throwErrorOrGet(() -> super.getBalances(addresses, height));
     }
 
     @Override
     public BalanceDetails getBalanceDetails(Address address) {
-        try {
-            return super.getBalanceDetails(address);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getBalanceDetails(address));
     }
 
     @Override
     public List<DataEntry> getData(Address address) {
-        try {
-            return super.getData(address);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getData(address));
     }
 
     @Override
     public List<DataEntry> getData(Address address, List<String> keys) {
-        try {
-            return super.getData(address, keys);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getData(address, keys));
     }
 
     @Override
     public List<DataEntry> getData(Address address, Pattern regex) {
-        try {
-            return super.getData(address, regex);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getData(address, regex));
     }
 
     @Override
     public DataEntry getData(Address address, String key) {
-        try {
-            return super.getData(address, key);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getData(address, key));
     }
 
     @Override
     public long getEffectiveBalance(Address address) {
-        try {
-            return super.getEffectiveBalance(address);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getEffectiveBalance(address));
     }
 
     @Override
     public long getEffectiveBalance(Address address, int confirmations) {
-        try {
-            return super.getEffectiveBalance(address, confirmations);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getEffectiveBalance(address, confirmations));
     }
 
     @Override
     public ScriptInfo getScriptInfo(Address address) {
-        try {
-            return super.getScriptInfo(address);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getScriptInfo(address));
     }
 
     @Override
     public ScriptMeta getScriptMeta(Address address) {
-        try {
-            return super.getScriptMeta(address);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getScriptMeta(address));
     }
 
     @Override
     public List<Alias> getAliasesByAddress(Address address) {
-        try {
-            return super.getAliasesByAddress(address);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getAliasesByAddress(address));
     }
 
     @Override
     public Address getAddressByAlias(Alias alias) {
-        try {
-            return super.getAddressByAlias(alias);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getAddressByAlias(alias));
     }
 
     @Override
     public AssetDistribution getAssetDistribution(AssetId assetId, int height) {
-        try {
-            return super.getAssetDistribution(assetId, height);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getAssetDistribution(assetId, height));
     }
 
     @Override
     public AssetDistribution getAssetDistribution(AssetId assetId, int height, int limit) {
-        try {
-            return super.getAssetDistribution(assetId, height, limit);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getAssetDistribution(assetId, height, limit));
     }
 
-    @Override
+    @Override //TODO iterators and parsers for all limited requests
     public AssetDistribution getAssetDistribution(AssetId assetId, int height, int limit, Address after) {
-        try {
-            return super.getAssetDistribution(assetId, height, limit, after);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getAssetDistribution(assetId, height, limit, after));
     }
 
     @Override
     public List<AssetBalance> getAssetsBalance(Address address) {
-        try {
-            return super.getAssetsBalance(address);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getAssetsBalance(address));
     }
 
     @Override
     public long getAssetBalance(Address address, AssetId assetId) {
-        try {
-            return super.getAssetBalance(address, assetId);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getAssetBalance(address, assetId));
     }
 
     @Override
     public AssetDetails getAssetDetails(AssetId assetId) {
-        try {
-            return super.getAssetDetails(assetId);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getAssetDetails(assetId));
     }
 
     @Override
     public List<AssetDetails> getAssetsDetails(List<AssetId> assetIds) {
-        try {
-            return super.getAssetsDetails(assetIds);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getAssetsDetails(assetIds));
     }
 
     @Override
     public List<AssetDetails> getNft(Address address) {
-        try {
-            return super.getNft(address);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getNft(address));
     }
 
     @Override
     public List<AssetDetails> getNft(Address address, int limit) {
-        try {
-            return super.getNft(address, limit);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getNft(address, limit));
     }
 
     @Override
     public List<AssetDetails> getNft(Address address, int limit, AssetId after) {
-        try {
-            return super.getNft(address, limit, after);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getNft(address, limit, after));
     }
 
     @Override
     public BlockchainRewards getBlockchainRewards() {
-        try {
-            return super.getBlockchainRewards();
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(super::getBlockchainRewards);
     }
 
     @Override
     public BlockchainRewards getBlockchainRewards(int height) {
-        try {
-            return super.getBlockchainRewards(height);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getBlockchainRewards(height));
     }
 
     @Override
     public int getHeight() {
-        try {
-            return super.getHeight();
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(super::getHeight);
     }
 
     @Override
     public int getBlockHeight(Base58String blockId) {
-        try {
-            return super.getBlockHeight(blockId);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getBlockHeight(blockId));
     }
 
     @Override
     public int getBlocksDelay(Base58String startBlockId, int blocksNum) {
-        try {
-            return super.getBlocksDelay(startBlockId, blocksNum);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getBlocksDelay(startBlockId, blocksNum));
     }
 
     @Override
     public BlockHeaders getBlockHeaders(int height) {
-        try {
-            return super.getBlockHeaders(height);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getBlockHeaders(height));
     }
 
     @Override
     public BlockHeaders getBlockHeaders(Base58String blockId) {
-        try {
-            return super.getBlockHeaders(blockId);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getBlockHeaders(blockId));
     }
 
     @Override
     public List<BlockHeaders> getBlocksHeaders(int fromHeight, int toHeight) {
-        try {
-            return super.getBlocksHeaders(fromHeight, toHeight);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getBlocksHeaders(fromHeight, toHeight));
     }
 
     @Override
     public BlockHeaders getLastBlockHeaders() {
-        try {
-            return super.getLastBlockHeaders();
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(super::getLastBlockHeaders);
     }
 
     @Override
     public Block getBlock(int height) {
-        try {
-            return super.getBlock(height);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getBlock(height));
     }
 
     @Override
     public Block getBlock(Base58String blockId) {
-        try {
-            return super.getBlock(blockId);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getBlock(blockId));
     }
 
     @Override
     public List<Block> getBlocks(int fromHeight, int toHeight) {
-        try {
-            return super.getBlocks(fromHeight, toHeight);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getBlocks(fromHeight, toHeight));
     }
 
     @Override
     public Block getGenesisBlock() {
-        try {
-            return super.getGenesisBlock();
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(super::getGenesisBlock);
     }
 
     @Override
     public Block getLastBlock() {
-        try {
-            return super.getLastBlock();
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(super::getLastBlock);
     }
 
     @Override
     public List<Block> getBlocksGeneratedBy(Address generator, int fromHeight, int toHeight) {
-        try {
-            return super.getBlocksGeneratedBy(generator, fromHeight, toHeight);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getBlocksGeneratedBy(generator, fromHeight, toHeight));
     }
 
     @Override
     public String getVersion() {
-        try {
-            return super.getVersion();
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(super::getVersion);
     }
 
     @Override
     public List<HistoryBalance> getBalanceHistory(Address address) {
-        try {
-            return super.getBalanceHistory(address);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getBalanceHistory(address));
     }
 
     @Override
     public List<TransactionDebugInfo> getStateChangesByAddress(Address address, int limit, Id afterTxId) {
-        try {
-            return super.getStateChangesByAddress(address, limit, afterTxId);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getStateChangesByAddress(address, limit, afterTxId));
     }
 
     @Override
     public List<TransactionDebugInfo> getStateChangesByAddress(Address address, int limit) {
-        try {
-            return super.getStateChangesByAddress(address, limit);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getStateChangesByAddress(address, limit));
     }
 
     @Override
     public List<TransactionDebugInfo> getStateChangesByAddress(Address address) {
-        try {
-            return super.getStateChangesByAddress(address);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getStateChangesByAddress(address));
     }
 
     @Override
     public <T extends Transaction> Validation validateTransaction(T transaction) {
-        try {
-            return super.validateTransaction(transaction);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.validateTransaction(transaction));
     }
 
     @Override
     public List<LeaseTransaction> getActiveLeases(Address address) {
-        try {
-            return super.getActiveLeases(address);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getActiveLeases(address));
     }
 
     @Override
     public <T extends Transaction> Amount calculateTransactionFee(T transaction) {
-        try {
-            return super.calculateTransactionFee(transaction);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.calculateTransactionFee(transaction));
     }
 
     @Override
     public <T extends Transaction> T broadcast(T transaction) {
-        try {
-            return super.broadcast(transaction);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.broadcast(transaction));
     }
 
     @Override
     public TransactionInfo getTransactionInfo(Id txId) {
-        try {
-            return super.getTransactionInfo(txId);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getTransactionInfo(txId));
     }
 
     @Override
     public List<TransactionInfo> getTransactionsByAddress(Address address) {
-        try {
-            return super.getTransactionsByAddress(address);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getTransactionsByAddress(address));
     }
 
     @Override
     public List<TransactionInfo> getTransactionsByAddress(Address address, int limit) {
-        try {
-            return super.getTransactionsByAddress(address, limit);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getTransactionsByAddress(address, limit));
     }
 
     @Override
     public List<TransactionInfo> getTransactionsByAddress(Address address, int limit, Id afterTxId) {
-        try {
-            return super.getTransactionsByAddress(address, limit, afterTxId);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getTransactionsByAddress(address, limit, afterTxId));
     }
 
     @Override
     public TransactionStatus getTransactionStatus(Id txId) {
-        try {
-            return super.getTransactionStatus(txId);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getTransactionStatus(txId));
     }
 
     @Override
     public List<TransactionStatus> getTransactionsStatus(List<Id> txIds) {
-        try {
-            return super.getTransactionsStatus(txIds);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getTransactionsStatus(txIds));
     }
 
     @Override
     public List<TransactionStatus> getTransactionsStatus(Id... txIds) {
-        try {
-            return super.getTransactionsStatus(txIds);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getTransactionsStatus(txIds));
     }
 
     @Override
     public Transaction getUnconfirmedTransaction(Id txId) {
-        try {
-            return super.getUnconfirmedTransaction(txId);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.getUnconfirmedTransaction(txId));
     }
 
     @Override
     public List<Transaction> getUnconfirmedTransactions() {
-        try {
-            return super.getUnconfirmedTransactions();
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(super::getUnconfirmedTransactions);
     }
 
     @Override
     public int getUtxSize() {
-        try {
-            return super.getUtxSize();
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(super::getUtxSize);
     }
 
     @Override
     public ScriptInfo compileScript(String source) {
-        try {
-            return super.compileScript(source);
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
+        return throwErrorOrGet(() -> super.compileScript(source));
     }
 }

@@ -1,4 +1,4 @@
-package im.mak.paddle;
+package im.mak.paddle.util;
 
 public class Constants {
 

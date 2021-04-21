@@ -1,4 +1,4 @@
-package im.mak.paddle;
+package im.mak.paddle.util;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.IntStream;

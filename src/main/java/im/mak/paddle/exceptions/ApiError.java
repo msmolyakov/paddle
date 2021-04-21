@@ -1,6 +1,6 @@
 package im.mak.paddle.exceptions;
 
-public class ApiError extends Error {
+public class ApiError extends RuntimeException {
 
     public final int code;
 

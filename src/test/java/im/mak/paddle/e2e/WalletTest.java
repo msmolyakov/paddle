@@ -1,112 +1,114 @@
 package im.mak.paddle.e2e;
 
+import com.wavesplatform.transactions.common.Amount;
 import im.mak.paddle.Account;
-import com.wavesplatform.transactions.InvokeScriptTransaction;
-import com.wavesplatform.transactions.invocation.IntegerArg;
+import im.mak.paddle.dapps.WalletDApp;
 import org.junit.jupiter.api.*;
 
-import static im.mak.paddle.Async.async;
-import static im.mak.paddle.util.ScriptUtil.fromFile;
+import static im.mak.paddle.token.Waves.WAVES;
+import static im.mak.paddle.util.Async.async;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.MethodOrderer.Alphanumeric;
+import static org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 
 class WalletTest {
 
-    private static Account alice, bob, carol;
+    private static WalletDApp wallet;
+    private static Account alice, bob;
 
     @BeforeAll
     static void before() {
         async(
-                () -> {
-                    alice = new Account(1_00000000L);
-                    alice.setScript(s -> s.script(fromFile("wallet.ride")));
-                },
-                () -> bob = new Account(1_00000000L),
-                () -> carol = new Account(1_00000000L)
+                () -> wallet = new WalletDApp(WAVES.amount(10)),
+                () -> alice = new Account(WAVES.amount(10)),
+                () -> bob = new Account(WAVES.amount(10))
         );
     }
 
     @Nested
-    @TestMethodOrder(Alphanumeric.class)
+    @TestMethodOrder(OrderAnnotation.class)
     class Positive {
 
-        @Test
-        void a_canDepositWaves() {
-            long aliceInitBalance = alice.getWavesBalance();
-            long amount = 100;
+        @Test @Order(10)
+        void canDepositWaves() {
+            long walletInitBalance = wallet.getWavesBalance();
+            Amount amount = WAVES.of(0.1);
 
-            bob.invoke(i -> i.dApp(alice).function("deposit").wavesPayment(amount));
+            alice.invoke(wallet.deposit(), amount);
 
             assertAll("data and balances",
-                    () -> assertThat(alice.getData().size()).isEqualTo(1),
-                    () -> assertThat(alice.getIntegerData(bob.address().toString())).isEqualTo(amount),
+                    () -> assertThat(wallet.getData().size()).isEqualTo(1),
+                    () -> assertThat(wallet.getIntegerData(alice.address().toString())).isEqualTo(amount.value()),
 
-                    () -> assertThat(alice.getWavesBalance()).isEqualTo(aliceInitBalance + amount)
+                    () -> assertThat(wallet.getWavesBalance()).isEqualTo(walletInitBalance + amount.value())
             );
         }
 
-        @Test
-        void b_canDepositWavesTwice() {
-            long prevDeposit = alice.getIntegerData(bob.address().toString());
-            long amount = 50;
+        @Test @Order(20)
+        void canDepositWavesTwice() {
+            long prevDeposit = wallet.getIntegerData(alice.address().toString());
+            Amount amount = WAVES.of(0.5);
 
-            bob.invoke(i -> i.dApp(alice).function("deposit").wavesPayment(amount));
+            alice.invoke(wallet.deposit(), amount);
 
             assertAll("data",
-                    () -> assertThat(alice.getData().size()).isEqualTo(1),
-                    () -> assertThat(alice.getIntegerData(bob.address().toString())).isEqualTo(prevDeposit + amount)
+                    () -> assertThat(wallet.getData().size()).isEqualTo(1),
+                    () -> assertThat(wallet.getIntegerData(alice.address().toString())).isEqualTo(prevDeposit + amount.value())
             );
         }
 
-        @Test
-        void c_accountsStoredSeparately() {
-            long bobDeposit = alice.getIntegerData(bob.address().toString());
-            long amount = 20;
+        @Test @Order(30)
+        void accountsStoredSeparately() {
+            long aliceDeposit = wallet.getIntegerData(alice.address().toString());
+            Amount amount = WAVES.of(2);
 
-            carol.invoke(i -> i.dApp(alice).function("deposit").wavesPayment(amount));
+            bob.invoke(wallet.deposit(), amount);
 
             assertAll("data",
-                    () -> assertThat(alice.getData().size()).isEqualTo(2),
-                    () -> assertThat(alice.getIntegerData(bob.address().toString())).isEqualTo(bobDeposit),
-                    () -> assertThat(alice.getIntegerData(carol.address().toString())).isEqualTo(amount)
+                    () -> assertThat(wallet.getData().size()).isEqualTo(2),
+                    () -> assertThat(wallet.getIntegerData(alice.address().toString())).isEqualTo(aliceDeposit),
+                    () -> assertThat(wallet.getIntegerData(bob.address().toString())).isEqualTo(amount.value())
             );
         }
 
-        @Test
-        void d_canWithdrawPartially() {
+        @Test @Order(40)
+        void canWithdrawPartially() {
+            long walletInitBalance = wallet.getWavesBalance();
             long aliceInitBalance = alice.getWavesBalance();
-            long bobInitBalance = bob.getWavesBalance();
-            long bobDeposit = alice.getIntegerData(bob.address().toString());
-            long carolDeposit = alice.getIntegerData(carol.address().toString());
-            long amount = 1;
+            long aliceDeposit = wallet.getIntegerData(alice.address().toString());
+            long walletDeposit = wallet.getIntegerData(bob.address().toString());
+            long amount = WAVES.amount(0.03);
 
-            InvokeScriptTransaction invoke = bob.invoke((i -> i.dApp(alice).function("withdraw", IntegerArg.as(amount)))).tx();
+            long invokeFee =
+                    alice.invoke(wallet.withdraw(amount))
+                            .tx().fee().value();
 
             assertAll("data and balances",
-                    () -> assertThat(alice.getData().size()).isEqualTo(2),
-                    () -> assertThat(alice.getIntegerData(bob.address().toString())).isEqualTo(bobDeposit - amount),
-                    () -> assertThat(alice.getIntegerData(carol.address().toString())).isEqualTo(carolDeposit),
+                    () -> assertThat(wallet.getData().size()).isEqualTo(2),
+                    () -> assertThat(wallet.getIntegerData(alice.address().toString())).isEqualTo(aliceDeposit - amount),
+                    () -> assertThat(wallet.getIntegerData(bob.address().toString())).isEqualTo(walletDeposit),
 
-                    () -> assertThat(alice.getWavesBalance()).isEqualTo(aliceInitBalance - amount),
-                    () -> assertThat(bob.getWavesBalance()).isEqualTo(bobInitBalance + amount - invoke.fee().value())
+                    () -> assertThat(wallet.getWavesBalance()).isEqualTo(walletInitBalance - amount),
+                    () -> assertThat(alice.getWavesBalance()).isEqualTo(aliceInitBalance + amount - invokeFee)
             );
         }
 
-        @Test
-        void e_canWithdrawAll() {
+        @Test @Order(50)
+        void canWithdrawAll() {
+            long walletInitBalance = wallet.getWavesBalance();
             long aliceInitBalance = alice.getWavesBalance();
-            long bobInitBalance = bob.getWavesBalance();
-            long amount = alice.getIntegerData(bob.address().toString());
+            long amount = wallet.getIntegerData(alice.address().toString());
 
-            InvokeScriptTransaction invoke = bob.invoke((i -> i.dApp(alice).function("withdraw", IntegerArg.as(amount)))).tx();
+            long invokeFee =
+                    alice.invoke(wallet.withdraw(amount))
+                            .tx().fee().value();
 
             assertAll("data and balances",
-                    () -> assertThat(alice.getData().size()).isEqualTo(2),
-                    () -> assertThat(alice.getIntegerData(bob.address().toString())).isEqualTo(0),
+                    () -> assertThat(wallet.getData().size()).isEqualTo(2),
+                    () -> assertThat(wallet.getIntegerData(alice.address().toString())).isEqualTo(0),
 
-                    () -> assertThat(alice.getWavesBalance()).isEqualTo(aliceInitBalance - amount),
-                    () -> assertThat(bob.getWavesBalance()).isEqualTo(bobInitBalance + amount - invoke.fee().value())
+                    () -> assertThat(wallet.getWavesBalance()).isEqualTo(walletInitBalance - amount),
+                    () -> assertThat(alice.getWavesBalance()).isEqualTo(aliceInitBalance + amount - invokeFee)
             );
         }
 

@@ -4,7 +4,8 @@ import im.mak.paddle.Account;
 import com.wavesplatform.transactions.common.AssetId;
 import org.junit.jupiter.api.*;
 
-import static im.mak.paddle.Constants.MIN_FEE;
+import static im.mak.paddle.util.Constants.EXTRA_FEE;
+import static im.mak.paddle.util.Constants.MIN_FEE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
@@ -25,10 +26,10 @@ class IssueNftTest {
         AssetId nftId = alice.issueNft(i -> i.name("My NFT").description("My first NFT").script("true"))
                 .tx().assetId();
 
-        alice.transfer(t -> t.to(bob).amount(1, nftId));
+        alice.transfer(bob, nftId, 1);
 
         assertAll("balances",
-                () -> assertThat(alice.getWavesBalance()).isEqualTo(initBalance - MIN_FEE * 6),
+                () -> assertThat(alice.getWavesBalance()).isEqualTo(initBalance - MIN_FEE * 2 - EXTRA_FEE),
                 () -> assertThat(alice.getAssetBalance(nftId)).isEqualTo(0),
 
                 () -> assertThat(bob.getAssetBalance(nftId)).isEqualTo(1),

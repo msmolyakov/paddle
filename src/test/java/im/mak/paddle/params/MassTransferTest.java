@@ -1,4 +1,4 @@
-package im.mak.paddle.actions;
+package im.mak.paddle.params;
 
 import im.mak.paddle.Account;
 import com.wavesplatform.transactions.MassTransferTransaction;
@@ -8,8 +8,8 @@ import com.wavesplatform.transactions.common.AssetId;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static im.mak.paddle.Async.async;
-import static im.mak.paddle.Constants.EXTRA_FEE;
+import static im.mak.paddle.util.Async.async;
+import static im.mak.paddle.util.Constants.EXTRA_FEE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
@@ -37,11 +37,11 @@ class MassTransferTest {
                 },
                 () -> {
                     dave = new Account(100000);
-                    dave.createAlias(a -> a.alias(aliasShort.name()));
+                    dave.createAlias(aliasShort);
                 },
                 () -> {
                     eve = new Account(100000);
-                    eve.createAlias(a -> a.alias(aliasLong.name()));
+                    eve.createAlias(aliasLong.name());
                 }
         );
     }
