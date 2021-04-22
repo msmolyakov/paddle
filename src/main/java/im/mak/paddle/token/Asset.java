@@ -23,16 +23,23 @@ import static im.mak.paddle.util.Constants.MIN_FEE;
 import static im.mak.paddle.Node.node;
 
 @SuppressWarnings("unused")
-public class Asset implements Token {
+public class Asset extends AssetId implements Token {
 
-    private final AssetId id;
     private final int decimals;
     private final PublicKey issuer;
     private final TransactionInfo originTransactionInfo;
     private final boolean isNft;
+    
+    public static Asset as(AssetId assetId) {
+        return new Asset(assetId);
+    }
 
     public Asset(AssetId assetId) {
-        this.id = assetId;
+        this(assetId.toString());
+    }
+    
+    public Asset(String assetId) {
+        super(assetId);
 
         AssetDetails details = this.getDetails();
         this.decimals = details.decimals();
@@ -46,17 +53,17 @@ public class Asset implements Token {
         } else if (originTransactionInfo().tx() instanceof InvokeScriptTransaction) {
             StateChanges stateChanges = node().getStateChanges(originTransactionInfo().tx().id()).stateChanges();
             IssueAction issue = stateChanges.issues().stream()
-                    .filter(i -> i.assetId().equals(this.id))
+                    .filter(i -> this.equals(i.assetId()))
                     .findFirst()
                     .orElseThrow(IllegalStateException::new);
             this.isNft = issue.quantity() == 1 && issue.decimals() == 0 && !issue.isReissuable();
         } else
-            throw new IllegalStateException("Can't find transaction which issued asset \"" + this.id + "\"");
+            throw new IllegalStateException("Can't find transaction which issued asset \"" + this + "\"");
     }
 
     @Override
     public AssetId id() {
-        return this.id;
+        return this;
     }
 
     @Override
@@ -83,11 +90,11 @@ public class Asset implements Token {
     }
 
     public Amount ofSponsored(long wavesAmount) {
-        return Amount.of(this.amountSponsored(wavesAmount), this.id);
+        return Amount.of(this.amountSponsored(wavesAmount), this);
     }
 
     public AssetDetails getDetails() {
-        return node().getAssetDetails(this.id);
+        return node().getAssetDetails(this);
     }
 
     @Override
@@ -97,23 +104,23 @@ public class Asset implements Token {
 
     @Override
     public long getBalanceOf(Recipient recipient) {
-        return node().getAssetBalance(RecipientResolver.toAddress(recipient), this.id);
+        return node().getAssetBalance(RecipientResolver.toAddress(recipient), this);
     }
 
     public AssetDistribution getDistribution(int height, int limit, Address after) {
-        return node().getAssetDistribution(this.id, height, limit, after);
+        return node().getAssetDistribution(this, height, limit, after);
     }
 
     public AssetDistribution getDistribution(int height, int limit) {
-        return node().getAssetDistribution(this.id, height, limit);
+        return node().getAssetDistribution(this, height, limit);
     }
 
     public AssetDistribution getDistribution(int height) {
-        return node().getAssetDistribution(this.id, height);
+        return node().getAssetDistribution(this, height);
     }
 
     public AssetDistribution getDistribution() {
-        return node().getAssetDistribution(this.id, node().getHeight());
+        return node().getAssetDistribution(this, node().getHeight());
     }
 
     public int getNextHeightToUpdateInfo() {
@@ -134,7 +141,7 @@ public class Asset implements Token {
 
             txs.stream()
                     .filter(i -> i.tx() instanceof UpdateAssetInfoTransaction
-                            && ((UpdateAssetInfoTransaction) i.tx()).assetId().equals(this.id))
+                            && ((UpdateAssetInfoTransaction) i.tx()).assetId().equals(this))
                     .findFirst()
                     .ifPresent(i -> lastUpdateHeight.set(i.height()));
 
@@ -149,7 +156,7 @@ public class Asset implements Token {
         } while (listSize == 1000);
 
         if (lastUpdateHeight.get() == 0)
-            throw new IllegalStateException("Can't find height at last update info of asset \"" + this.id + "\"");
+            throw new IllegalStateException("Can't find height at last update info of asset \"" + this + "\"");
         else
             return lastUpdateHeight.get() + node().minAssetInfoUpdateInterval();
     }

@@ -26,7 +26,7 @@ class IssueNftTest {
         AssetId nftId = alice.issueNft(i -> i.name("My NFT").description("My first NFT").script("true"))
                 .tx().assetId();
 
-        alice.transfer(bob, nftId, 1);
+        alice.transfer(bob, 1, nftId);
 
         assertAll("balances",
                 () -> assertThat(alice.getWavesBalance()).isEqualTo(initBalance - MIN_FEE * 2 - EXTRA_FEE),

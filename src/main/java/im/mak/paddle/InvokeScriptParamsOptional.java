@@ -25,7 +25,7 @@ public class InvokeScriptParamsOptional extends CommonParams<InvokeScriptParamsO
         return this;
     }
 
-    public InvokeScriptParamsOptional payment(AssetId assetId, long amount) {
+    public InvokeScriptParamsOptional payment(long amount, AssetId assetId) {
         this.payments.add(Amount.of(amount, assetId));
         return this;
     }

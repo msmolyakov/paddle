@@ -32,7 +32,7 @@ public class Account {
         this.privateKey = Common.notNull(privateKey, "Private key");
 
         if (initialWavesBalance > 0)
-            node().faucet().transfer(this, AssetId.WAVES, initialWavesBalance);
+            node().faucet().transfer(this, initialWavesBalance, AssetId.WAVES);
     }
 
     public Account(PrivateKey privateKey) {
@@ -262,7 +262,7 @@ public class Account {
         return transfer(to.address(), amount, params);
     }
 
-    public TxInfo<TransferTransaction> transfer(Account to, AssetId assetId, long amount, Consumer<TransferParams> params) {
+    public TxInfo<TransferTransaction> transfer(Account to, long amount, AssetId assetId, Consumer<TransferParams> params) {
         return transfer(to.address(), Amount.of(amount, assetId), params);
     }
 
@@ -274,7 +274,7 @@ public class Account {
         return transfer(to.address(), amount, opt -> {});
     }
 
-    public TxInfo<TransferTransaction> transfer(Account to, AssetId assetId, long amount) {
+    public TxInfo<TransferTransaction> transfer(Account to, long amount, AssetId assetId) {
         return transfer(to.address(), Amount.of(amount, assetId), opt -> {});
     }
 
@@ -294,7 +294,7 @@ public class Account {
         return node().waitForTransaction(node().broadcast(signedTx).id(), ReissueTransaction.class);
     }
 
-    public TxInfo<ReissueTransaction> reissue(AssetId assetId, long amount, Consumer<ReissueParams> params) {
+    public TxInfo<ReissueTransaction> reissue(long amount, AssetId assetId, Consumer<ReissueParams> params) {
         return reissue(Amount.of(amount, assetId), params);
     }
 
@@ -302,8 +302,8 @@ public class Account {
         return reissue(amount, opt -> {});
     }
 
-    public TxInfo<ReissueTransaction> reissue(AssetId assetId, long amount) {
-        return reissue(assetId, amount, opt -> {});
+    public TxInfo<ReissueTransaction> reissue(long amount, AssetId assetId) {
+        return reissue(amount, assetId, opt -> {});
     }
 
     public TxInfo<BurnTransaction> burn(Amount amount, Consumer<CommonParams<?>> params) {
@@ -321,7 +321,7 @@ public class Account {
         return node().waitForTransaction(node().broadcast(signedTx).id(), BurnTransaction.class);
     }
 
-    public TxInfo<BurnTransaction> burn(AssetId assetId, long amount, Consumer<CommonParams<?>> params) {
+    public TxInfo<BurnTransaction> burn(long amount, AssetId assetId, Consumer<CommonParams<?>> params) {
         return burn(Amount.of(amount, assetId), params);
     }
 
@@ -329,8 +329,8 @@ public class Account {
         return burn(amount, opt -> {});
     }
 
-    public TxInfo<BurnTransaction> burn(AssetId assetId, long amount) {
-        return burn(assetId, amount, opt -> {});
+    public TxInfo<BurnTransaction> burn(long amount, AssetId assetId) {
+        return burn(amount, assetId, opt -> {});
     }
 
     public TxInfo<ExchangeTransaction> exchange(Order order1, Order order2, long amount, long price, Consumer<ExchangeParams> params) {
