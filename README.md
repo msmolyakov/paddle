@@ -53,7 +53,7 @@ Or add Paddle as dependency to your existing project.
 <dependency>
     <groupId>im.mak</groupId>
     <artifactId>paddle</artifactId>
-    <version>1.0.0-rc5</version>
+    <version>1.0.0-rc6</version>
 </dependency>
 ```
 
@@ -61,12 +61,12 @@ Or add Paddle as dependency to your existing project.
 
 Groovy DSL:
 ```groovy
-implementation 'im.mak:paddle:1.0.0-rc5'
+implementation 'im.mak:paddle:1.0.0-rc6'
 ```
 
 Kotlin DSL:
 ```kotlin
-compile("im.mak:paddle:1.0.0-rc5")
+compile("im.mak:paddle:1.0.0-rc6")
 ```
 
 ### Simple usage
