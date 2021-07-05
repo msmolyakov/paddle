@@ -12,7 +12,8 @@ import com.wavesplatform.transactions.common.Recipient;
 import com.wavesplatform.wavesj.AssetDetails;
 import com.wavesplatform.wavesj.AssetDistribution;
 import com.wavesplatform.wavesj.StateChanges;
-import com.wavesplatform.wavesj.TransactionInfo;
+import com.wavesplatform.wavesj.info.InvokeScriptTransactionInfo;
+import com.wavesplatform.wavesj.info.TransactionInfo;
 import com.wavesplatform.wavesj.actions.IssueAction;
 import im.mak.paddle.util.RecipientResolver;
 
@@ -48,11 +49,13 @@ public class Asset extends AssetId implements Token {
         this.originTransactionInfo = node().getTransactionInfo(details.originTransactionId());
 
         if (originTransactionInfo().tx() instanceof IssueTransaction) {
-            IssueTransaction issue = (IssueTransaction) originTransactionInfo().tx();
+            IssueTransaction issue = (IssueTransaction) originTransactionInfo.tx();
             this.isNft = issue.quantity() == 1 && issue.decimals() == 0 && !issue.reissuable();
         } else if (originTransactionInfo().tx() instanceof InvokeScriptTransaction) {
-            StateChanges stateChanges = node().getStateChanges(originTransactionInfo().tx().id()).stateChanges();
-            IssueAction issue = stateChanges.issues().stream()
+            IssueAction issue = ((InvokeScriptTransactionInfo) originTransactionInfo)
+                    .stateChanges()
+                    .issues()
+                    .stream()
                     .filter(i -> this.equals(i.assetId()))
                     .findFirst()
                     .orElseThrow(IllegalStateException::new);
@@ -61,6 +64,7 @@ public class Asset extends AssetId implements Token {
             throw new IllegalStateException("Can't find transaction which issued asset \"" + this + "\"");
     }
 
+    //TODO so is really need to extend AssetId? Does this even work on equality?
     @Override
     public AssetId id() {
         return this;

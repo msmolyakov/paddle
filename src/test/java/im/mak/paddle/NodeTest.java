@@ -43,7 +43,7 @@ class NodeTest {
         void canWaitNBlocks() {
             int current = node().getHeight();
 
-            int height = node().waitNBlocks(1);
+            int height = node().waitBlocks(1);
 
             assertThat(height).isGreaterThanOrEqualTo(current + 1);
         }
@@ -53,7 +53,7 @@ class NodeTest {
             int current = node().getHeight();
 
             NodeError e = assertThrows(NodeError.class, () ->
-                    node().waitNBlocks(100, 1)
+                    node().waitBlocks(100, 1)
             );
 
             assertThat(e).hasMessageStartingWith(
