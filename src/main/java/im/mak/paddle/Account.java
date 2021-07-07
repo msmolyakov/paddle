@@ -256,7 +256,7 @@ public class Account {
                         .timestamp(tp.timestamp == 0 ? System.currentTimeMillis() : tp.timestamp)
                         .getUnsigned());
         Id txId = node().broadcast(signedTx).id();
-        return (TransferTransactionInfo) node().waitForTransaction(txId/*, TransferTransactionInfo.class*/);
+        return node().waitForTransaction(txId, TransferTransactionInfo.class);
     }
 
     public TransferTransactionInfo transfer(Account to, Amount amount, Consumer<TransferParams> params) {
@@ -460,7 +460,6 @@ public class Account {
                         .fee(Amount.of(common.getFee(), common.feeAssetId))
                         .timestamp(common.timestamp == 0 ? System.currentTimeMillis() : common.timestamp)
                         .getUnsigned());
-        System.out.println(signedTx);
         return node().waitForTransaction(node().broadcast(signedTx).id(), SetScriptTransactionInfo.class);
     }
 

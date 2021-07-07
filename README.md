@@ -38,7 +38,7 @@ Paddle is a Java library to write tests for your dApps and other smart contracts
 
 ### Requirements
 
-- Java 8 or higher;
+- Java 11 or higher;
 - Docker 17.03.1 or newer if you want to use Waves Node in Docker. On Windows, install the latest "Docker for Windows".
 
 ### Installation
