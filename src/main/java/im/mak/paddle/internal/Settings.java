@@ -16,7 +16,7 @@ public class Settings {
     public final String dockerImage;
     public final boolean autoShutdown;
 
-    public final Config _conf;
+    protected final Config _conf;
 
     public Settings() {
         String base = "paddle";

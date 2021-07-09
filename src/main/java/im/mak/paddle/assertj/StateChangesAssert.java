@@ -7,6 +7,7 @@ import com.wavesplatform.transactions.data.*;
 import com.wavesplatform.wavesj.LeaseInfo;
 import com.wavesplatform.wavesj.StateChanges;
 import com.wavesplatform.wavesj.actions.*;
+import im.mak.paddle.Account;
 import im.mak.paddle.dapp.DAppCall;
 import im.mak.paddle.util.RecipientResolver;
 import org.assertj.core.api.AbstractAssert;
@@ -17,6 +18,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 
+import static java.util.Collections.singletonList;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 public class StateChangesAssert extends AbstractAssert<StateChangesAssert, StateChanges> {
@@ -29,11 +31,11 @@ public class StateChangesAssert extends AbstractAssert<StateChangesAssert, State
         return new StateChangesAssert(actual);
     }
 
-    public StateChangesAssert containsExactly(Consumer<StateChangesFields> result) {
+    public StateChangesAssert containsExactly(Consumer<StateChangesFields> expected) {
         isNotNull();
 
         var fields = new StateChangesFields();
-        result.accept(fields);
+        expected.accept(fields);
 
         assertAll(
                 () -> Assertions.assertThat(actual.error()).isNotPresent(),
@@ -120,6 +122,10 @@ public class StateChangesAssert extends AbstractAssert<StateChangesAssert, State
             return this;
         }
 
+        public StateChangesFields transfer(Account to, Amount amount) {
+            return transfer(to.address(), amount);
+        }
+
         //todo other actions, error
 
         public StateChangesFields invoke(DAppCall dAppCall, List<Amount> payments, StateChanges stateChanges) {
@@ -131,12 +137,24 @@ public class StateChangesAssert extends AbstractAssert<StateChangesAssert, State
             return this;
         }
 
+        public StateChangesFields invoke(DAppCall dAppCall, List<Amount> payments, Consumer<StateChangesFields> stateChanges) {
+            StateChangesFields f = new StateChangesFields();
+            stateChanges.accept(f);
+
+            return invoke(dAppCall, payments, new StateChanges(f.dataEntries, f.transfers, f.issues, f.reissues,
+                    f.burns, f.sponsorFees, f.leases, f.leaseCancels, f.invokes, null));
+        }
+
         public StateChangesFields invoke(DAppCall dAppCall, List<Amount> payments) {
             return invoke(dAppCall, payments, new StateChanges());
         }
 
         public StateChangesFields invoke(DAppCall dAppCall, Amount... payments) {
             return invoke(dAppCall, Arrays.asList(payments));
+        }
+
+        public StateChangesFields invoke(DAppCall dAppCall, Amount payment, Consumer<StateChangesFields> stateChanges) {
+            return invoke(dAppCall, singletonList(payment), stateChanges);
         }
 
     }

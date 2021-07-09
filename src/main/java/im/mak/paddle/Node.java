@@ -49,15 +49,16 @@ public class Node extends com.wavesplatform.wavesj.Node {
         return instance;
     }
 
-    private final Settings conf;
-    private Account faucet;
+    protected final Settings conf;
+    protected final Account faucet;
 
-    private Node() throws NodeException, IOException, URISyntaxException {
+    protected Node() throws NodeException, IOException, URISyntaxException {
         super(maybeRunDockerContainer());
         conf = new Settings();
+        faucet = new Account(PrivateKey.fromSeed(conf().faucetSeed));
     }
 
-    private static String maybeRunDockerContainer() {
+    protected static String maybeRunDockerContainer() {
         Settings conf = new Settings();
 
         if (conf.dockerImage != null) {
@@ -120,7 +121,19 @@ public class Node extends com.wavesplatform.wavesj.Node {
         return conf.apiUrl;
     }
 
-    private static <T> T throwErrorOrGet(Callable<T> mightThrowException) {
+    public Settings conf() {
+        return conf;
+    }
+
+    public Account faucet() {
+        return faucet;
+    }
+
+    public int minAssetInfoUpdateInterval() {
+        return conf().minAssetInfoUpdateInterval;
+    }
+
+    protected <T> T throwErrorOrGet(Callable<T> mightThrowException) {
         try {
             return mightThrowException.call();
         } catch (IOException e) {
@@ -130,16 +143,6 @@ public class Node extends com.wavesplatform.wavesj.Node {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public int minAssetInfoUpdateInterval() {
-        return this.conf.minAssetInfoUpdateInterval;
-    }
-
-    public Account faucet() {
-        if (faucet == null)
-            faucet = new Account(PrivateKey.fromSeed(conf.faucetSeed));
-        return faucet;
     }
 
     @Override
