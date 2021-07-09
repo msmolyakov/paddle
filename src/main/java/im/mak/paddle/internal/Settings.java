@@ -9,14 +9,25 @@ public class Settings {
 
     public final String name;
     public final String apiUrl;
-    public final char chainId;
     public final long blockInterval;
     public final int minAssetInfoUpdateInterval;
     public final String faucetSeed;
     public final String dockerImage;
     public final boolean autoShutdown;
 
-    protected final Config _conf;
+    public Settings(String apiUrl, long blockInterval, int minAssetInfoUpdateInterval, String faucetSeed, String dockerImage, boolean autoShutdown) {
+        this.name = "manual";
+        this.apiUrl = apiUrl;
+        this.blockInterval = blockInterval;
+        this.minAssetInfoUpdateInterval = minAssetInfoUpdateInterval;
+        this.faucetSeed = faucetSeed;
+        this.dockerImage = dockerImage;
+        this.autoShutdown = autoShutdown;
+    }
+
+    public Settings(String apiUrl) {
+        this(apiUrl, 60_000, 100_000, null, null, false);
+    }
 
     public Settings() {
         String base = "paddle";
@@ -28,10 +39,9 @@ public class Settings {
                 .withFallback(ConfigFactory.defaultReference());
 
         name = overridden.getString("paddle.profile");
-        _conf = overridden.getObject("paddle." + name).toConfig();
+        Config _conf = overridden.getObject("paddle." + name).toConfig();
 
         apiUrl = _conf.getString("api-url");
-        chainId = _conf.getString("chain-id").charAt(0);
         blockInterval = _conf.getDuration("block-interval").toMillis();
         minAssetInfoUpdateInterval = _conf.getInt("min-asset-info-update-interval");
         faucetSeed = _conf.getString("faucet-seed");
