@@ -2,8 +2,8 @@ package im.mak.paddle;
 
 import com.wavesplatform.transactions.exchange.Order;
 import com.wavesplatform.wavesj.*;
+import com.wavesplatform.wavesj.info.*;
 import im.mak.paddle.dapp.DAppCall;
-import im.mak.paddle.api.TxInfo;
 import com.wavesplatform.crypto.Crypto;
 import com.wavesplatform.transactions.*;
 import com.wavesplatform.transactions.account.Address;
@@ -87,7 +87,7 @@ public class Account {
         return node().getBalanceHistory(address());
     }
 
-    public List<LeaseTransaction> getActiveLeases() {
+    public List<LeaseInfo> getActiveLeases() {
         return node().getActiveLeases(address());
     }
 
@@ -163,16 +163,16 @@ public class Account {
         return ((StringEntry) getData(key)).value();
     }
 
-    public List<TransactionDebugInfo> getTransactionsHistory() {
-        return node().getStateChangesByAddress(address());
+    public List<TransactionInfo> getTransactionsHistory() {
+        return node().getTransactionsByAddress(address());
     }
 
-    public List<TransactionDebugInfo> getTransactionsHistory(int limit) {
-        return node().getStateChangesByAddress(address(), limit);
+    public List<TransactionInfo> getTransactionsHistory(int limit) {
+        return node().getTransactionsByAddress(address(), limit);
     }
 
-    public List<TransactionDebugInfo> getTransactionsHistory(int limit, Id afterTxId) {
-        return node().getStateChangesByAddress(address(), limit, afterTxId);
+    public List<TransactionInfo> getTransactionsHistory(int limit, Id afterTxId) {
+        return node().getTransactionsByAddress(address(), limit, afterTxId);
     }
 
     /* SIGN */
@@ -201,7 +201,7 @@ public class Account {
 
     /* TRANSACTIONS */
 
-    public TxInfo<IssueTransaction> issue(Consumer<IssueParams> params) {
+    public IssueTransactionInfo issue(Consumer<IssueParams> params) {
         IssueParams ip = new IssueParams(this);
         params.accept(ip);
         if (ip.signers.size() == 0)
@@ -215,14 +215,14 @@ public class Account {
                         .fee(Amount.of(ip.getFee(), ip.feeAssetId))
                         .timestamp(ip.timestamp == 0 ? System.currentTimeMillis() : ip.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), IssueTransaction.class);
+        return node().waitForTransaction(node().broadcast(signedTx).id(), IssueTransactionInfo.class);
     }
 
-    public TxInfo<IssueTransaction> issue() {
+    public IssueTransactionInfo issue() {
         return issue(opt -> {});
     }
 
-    public TxInfo<IssueTransaction> issueNft(Consumer<IssueNftParams> params) {
+    public IssueTransactionInfo issueNft(Consumer<IssueNftParams> params) {
         IssueNftParams ip = new IssueNftParams(this);
         params.accept(ip);
         if (ip.signers.size() == 0)
@@ -235,14 +235,14 @@ public class Account {
                         .fee(Amount.of(ip.getFee(), ip.feeAssetId))
                         .timestamp(ip.timestamp == 0 ? System.currentTimeMillis() : ip.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), IssueTransaction.class);
+        return node().waitForTransaction(node().broadcast(signedTx).id(), IssueTransactionInfo.class);
     }
 
-    public TxInfo<IssueTransaction> issueNft() {
+    public IssueTransactionInfo issueNft() {
         return issueNft(i -> {});
     }
 
-    public TxInfo<TransferTransaction> transfer(Recipient to, Amount amount, Consumer<TransferParams> params) {
+    public TransferTransactionInfo transfer(Recipient to, Amount amount, Consumer<TransferParams> params) {
         TransferParams tp = new TransferParams(this);
         params.accept(tp);
         if (tp.signers.size() == 0)
@@ -255,30 +255,31 @@ public class Account {
                         .fee(Amount.of(tp.getFee(), tp.feeAssetId))
                         .timestamp(tp.timestamp == 0 ? System.currentTimeMillis() : tp.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), TransferTransaction.class);
+        Id txId = node().broadcast(signedTx).id();
+        return node().waitForTransaction(txId, TransferTransactionInfo.class);
     }
 
-    public TxInfo<TransferTransaction> transfer(Account to, Amount amount, Consumer<TransferParams> params) {
+    public TransferTransactionInfo transfer(Account to, Amount amount, Consumer<TransferParams> params) {
         return transfer(to.address(), amount, params);
     }
 
-    public TxInfo<TransferTransaction> transfer(Account to, long amount, AssetId assetId, Consumer<TransferParams> params) {
+    public TransferTransactionInfo transfer(Account to, long amount, AssetId assetId, Consumer<TransferParams> params) {
         return transfer(to.address(), Amount.of(amount, assetId), params);
     }
 
-    public TxInfo<TransferTransaction> transfer(Recipient to, Amount amount) {
+    public TransferTransactionInfo transfer(Recipient to, Amount amount) {
         return transfer(to, amount, opt -> {});
     }
 
-    public TxInfo<TransferTransaction> transfer(Account to, Amount amount) {
+    public TransferTransactionInfo transfer(Account to, Amount amount) {
         return transfer(to.address(), amount, opt -> {});
     }
 
-    public TxInfo<TransferTransaction> transfer(Account to, long amount, AssetId assetId) {
+    public TransferTransactionInfo transfer(Account to, long amount, AssetId assetId) {
         return transfer(to.address(), Amount.of(amount, assetId), opt -> {});
     }
 
-    public TxInfo<ReissueTransaction> reissue(Amount amount, Consumer<ReissueParams> params) {
+    public ReissueTransactionInfo reissue(Amount amount, Consumer<ReissueParams> params) {
         ReissueParams rp = new ReissueParams(this);
         params.accept(rp);
         if (rp.signers.size() == 0)
@@ -291,22 +292,22 @@ public class Account {
                         .fee(Amount.of(rp.getFee(), rp.feeAssetId))
                         .timestamp(rp.timestamp == 0 ? System.currentTimeMillis() : rp.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), ReissueTransaction.class);
+        return node().waitForTransaction(node().broadcast(signedTx).id(), ReissueTransactionInfo.class);
     }
 
-    public TxInfo<ReissueTransaction> reissue(long amount, AssetId assetId, Consumer<ReissueParams> params) {
+    public ReissueTransactionInfo reissue(long amount, AssetId assetId, Consumer<ReissueParams> params) {
         return reissue(Amount.of(amount, assetId), params);
     }
 
-    public TxInfo<ReissueTransaction> reissue(Amount amount) {
+    public ReissueTransactionInfo reissue(Amount amount) {
         return reissue(amount, opt -> {});
     }
 
-    public TxInfo<ReissueTransaction> reissue(long amount, AssetId assetId) {
+    public ReissueTransactionInfo reissue(long amount, AssetId assetId) {
         return reissue(amount, assetId, opt -> {});
     }
 
-    public TxInfo<BurnTransaction> burn(Amount amount, Consumer<CommonParams<?>> params) {
+    public BurnTransactionInfo burn(Amount amount, Consumer<CommonParams<?>> params) {
         BurnParams common = new BurnParams(this);
         params.accept(common);
         if (common.signers.size() == 0)
@@ -318,22 +319,22 @@ public class Account {
                         .fee(Amount.of(common.getFee(), common.feeAssetId))
                         .timestamp(common.timestamp == 0 ? System.currentTimeMillis() : common.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), BurnTransaction.class);
+        return node().waitForTransaction(node().broadcast(signedTx).id(), BurnTransactionInfo.class);
     }
 
-    public TxInfo<BurnTransaction> burn(long amount, AssetId assetId, Consumer<CommonParams<?>> params) {
+    public BurnTransactionInfo burn(long amount, AssetId assetId, Consumer<CommonParams<?>> params) {
         return burn(Amount.of(amount, assetId), params);
     }
 
-    public TxInfo<BurnTransaction> burn(Amount amount) {
+    public BurnTransactionInfo burn(Amount amount) {
         return burn(amount, opt -> {});
     }
 
-    public TxInfo<BurnTransaction> burn(long amount, AssetId assetId) {
+    public BurnTransactionInfo burn(long amount, AssetId assetId) {
         return burn(amount, assetId, opt -> {});
     }
 
-    public TxInfo<ExchangeTransaction> exchange(Order order1, Order order2, long amount, long price, Consumer<ExchangeParams> params) {
+    public ExchangeTransactionInfo exchange(Order order1, Order order2, long amount, long price, Consumer<ExchangeParams> params) {
         ExchangeParams ep = new ExchangeParams(this);
         params.accept(ep);
         if (ep.signers.size() == 0)
@@ -345,14 +346,14 @@ public class Account {
                         .fee(Amount.of(ep.getFee(), ep.feeAssetId))
                         .timestamp(ep.timestamp == 0 ? System.currentTimeMillis() : ep.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), ExchangeTransaction.class);
+        return node().waitForTransaction(node().broadcast(signedTx).id(), ExchangeTransactionInfo.class);
     }
 
-    public TxInfo<ExchangeTransaction> exchange(Order order1, Order order2, long amount, long price) {
+    public ExchangeTransactionInfo exchange(Order order1, Order order2, long amount, long price) {
         return exchange(order1, order2, amount, price, opt -> {});
     }
 
-    public TxInfo<LeaseTransaction> lease(Recipient to, long amount, Consumer<CommonParams<?>> params) {
+    public LeaseTransactionInfo lease(Recipient to, long amount, Consumer<CommonParams<?>> params) {
         CommonParams<?> common = new CommonParams<>(this, LeaseTransaction.MIN_FEE);
         params.accept(common);
         if (common.signers.size() == 0)
@@ -363,22 +364,22 @@ public class Account {
                         .fee(Amount.of(common.getFee(), common.feeAssetId))
                         .timestamp(common.timestamp == 0 ? System.currentTimeMillis() : common.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), LeaseTransaction.class);
+        return node().waitForTransaction(node().broadcast(signedTx).id(), LeaseTransactionInfo.class);
     }
 
-    public TxInfo<LeaseTransaction> lease(Recipient to, long amount) {
+    public LeaseTransactionInfo lease(Recipient to, long amount) {
         return lease(to, amount, opt -> {});
     }
 
-    public TxInfo<LeaseTransaction> lease(Account to, long amount, Consumer<CommonParams<?>> params) {
+    public LeaseTransactionInfo lease(Account to, long amount, Consumer<CommonParams<?>> params) {
         return lease(to.address(), amount, params);
     }
 
-    public TxInfo<LeaseTransaction> lease(Account to, long amount) {
+    public LeaseTransactionInfo lease(Account to, long amount) {
         return lease(to.address(), amount, opt -> {});
     }
 
-    public TxInfo<LeaseCancelTransaction> cancelLease(Id leaseId, Consumer<CommonParams<?>> params) {
+    public LeaseCancelTransactionInfo cancelLease(Id leaseId, Consumer<CommonParams<?>> params) {
         CommonParams<?> common = new CommonParams<>(this, LeaseCancelTransaction.MIN_FEE);
         params.accept(common);
         if (common.signers.size() == 0)
@@ -389,14 +390,14 @@ public class Account {
                         .fee(Amount.of(common.getFee(), common.feeAssetId))
                         .timestamp(common.timestamp == 0 ? System.currentTimeMillis() : common.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), LeaseCancelTransaction.class);
+        return node().waitForTransaction(node().broadcast(signedTx).id(), LeaseCancelTransactionInfo.class);
     }
 
-    public TxInfo<LeaseCancelTransaction> cancelLease(Id leaseId) {
+    public LeaseCancelTransactionInfo cancelLease(Id leaseId) {
         return cancelLease(leaseId, opt -> {});
     }
 
-    public TxInfo<CreateAliasTransaction> createAlias(String alias, Consumer<CommonParams<?>> params) {
+    public CreateAliasTransactionInfo createAlias(String alias, Consumer<CommonParams<?>> params) {
         CommonParams<?> common = new CommonParams<>(this, CreateAliasTransaction.MIN_FEE);
         params.accept(common);
         if (common.signers.size() == 0)
@@ -407,18 +408,18 @@ public class Account {
                         .fee(Amount.of(common.getFee(), common.feeAssetId))
                         .timestamp(common.timestamp == 0 ? System.currentTimeMillis() : common.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), CreateAliasTransaction.class);
+        return node().waitForTransaction(node().broadcast(signedTx).id(), CreateAliasTransactionInfo.class);
     }
 
-    public TxInfo<CreateAliasTransaction> createAlias(String alias) {
+    public CreateAliasTransactionInfo createAlias(String alias) {
         return createAlias(alias, opt -> {});
     }
 
-    public TxInfo<CreateAliasTransaction> createAlias(Alias alias) {
+    public CreateAliasTransactionInfo createAlias(Alias alias) {
         return createAlias(alias.toString(), opt -> {});
     }
 
-    public TxInfo<MassTransferTransaction> massTransfer(Consumer<MassTransferParams> params) {
+    public MassTransferTransactionInfo massTransfer(Consumer<MassTransferParams> params) {
         MassTransferParams mtp = new MassTransferParams(this);
         params.accept(mtp);
         if (mtp.signers.size() == 0)
@@ -431,10 +432,10 @@ public class Account {
                         .fee(Amount.of(mtp.getFee(), mtp.feeAssetId))
                         .timestamp(mtp.timestamp == 0 ? System.currentTimeMillis() : mtp.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), MassTransferTransaction.class);
+        return node().waitForTransaction(node().broadcast(signedTx).id(), MassTransferTransactionInfo.class);
     }
 
-    public TxInfo<DataTransaction> writeData(Consumer<DataParams> params) {
+    public DataTransactionInfo writeData(Consumer<DataParams> params) {
         DataParams dp = new DataParams(this);
         params.accept(dp);
         if (dp.signers.size() == 0)
@@ -445,10 +446,10 @@ public class Account {
                         .fee(Amount.of(dp.getFee(), dp.feeAssetId))
                         .timestamp(dp.timestamp == 0 ? System.currentTimeMillis() : dp.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), DataTransaction.class);
+        return node().waitForTransaction(node().broadcast(signedTx).id(), DataTransactionInfo.class);
     }
 
-    public TxInfo<SetScriptTransaction> setScript(Base64String compiledScript, Consumer<CommonParams<?>> params) {
+    public SetScriptTransactionInfo setScript(Base64String compiledScript, Consumer<CommonParams<?>> params) {
         CommonParams<?> common = new CommonParams<>(this, SetScriptTransaction.MIN_FEE);
         params.accept(common);
         if (common.signers.size() == 0)
@@ -459,22 +460,22 @@ public class Account {
                         .fee(Amount.of(common.getFee(), common.feeAssetId))
                         .timestamp(common.timestamp == 0 ? System.currentTimeMillis() : common.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), SetScriptTransaction.class);
+        return node().waitForTransaction(node().broadcast(signedTx).id(), SetScriptTransactionInfo.class);
     }
 
-    public TxInfo<SetScriptTransaction> setScript(String script, Consumer<CommonParams<?>> params) {
+    public SetScriptTransactionInfo setScript(String script, Consumer<CommonParams<?>> params) {
         return setScript(node().compileScript(script).script(), params);
     }
 
-    public TxInfo<SetScriptTransaction> setScript(Base64String compiledScript) {
+    public SetScriptTransactionInfo setScript(Base64String compiledScript) {
         return setScript(compiledScript, opt -> {});
     }
 
-    public TxInfo<SetScriptTransaction> setScript(String script) {
+    public SetScriptTransactionInfo setScript(String script) {
         return setScript(script, opt -> {});
     }
 
-    public TxInfo<SponsorFeeTransaction> sponsorFee(AssetId assetId, long minFeeAmount, Consumer<CommonParams<?>> params) {
+    public SponsorFeeTransactionInfo sponsorFee(AssetId assetId, long minFeeAmount, Consumer<CommonParams<?>> params) {
         CommonParams<?> common = new CommonParams<>(this, SponsorFeeTransaction.MIN_FEE);
         params.accept(common);
         if (common.signers.size() == 0)
@@ -485,22 +486,22 @@ public class Account {
                         .fee(Amount.of(common.getFee(), common.feeAssetId))
                         .timestamp(common.timestamp == 0 ? System.currentTimeMillis() : common.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), SponsorFeeTransaction.class);
+        return node().waitForTransaction(node().broadcast(signedTx).id(), SponsorFeeTransactionInfo.class);
     }
 
-    public TxInfo<SponsorFeeTransaction> sponsorFee(Amount amount, Consumer<CommonParams<?>> params) {
+    public SponsorFeeTransactionInfo sponsorFee(Amount amount, Consumer<CommonParams<?>> params) {
         return sponsorFee(amount.assetId(), amount.value(), params);
     }
 
-    public TxInfo<SponsorFeeTransaction> sponsorFee(AssetId assetId, long minFeeAmount) {
+    public SponsorFeeTransactionInfo sponsorFee(AssetId assetId, long minFeeAmount) {
         return sponsorFee(assetId, minFeeAmount, opt -> {});
     }
 
-    public TxInfo<SponsorFeeTransaction> sponsorFee(Amount amount) {
+    public SponsorFeeTransactionInfo sponsorFee(Amount amount) {
         return sponsorFee(amount.assetId(), amount.value(), opt -> {});
     }
 
-    public TxInfo<SetAssetScriptTransaction> setAssetScript(AssetId assetId, Base64String compiledScript, Consumer<CommonParams<?>> params) {
+    public SetAssetScriptTransactionInfo setAssetScript(AssetId assetId, Base64String compiledScript, Consumer<CommonParams<?>> params) {
         CommonParams<?> common = new CommonParams<>(this, SetAssetScriptTransaction.MIN_FEE);
         params.accept(common);
         if (common.signers.size() == 0)
@@ -511,22 +512,22 @@ public class Account {
                         .fee(Amount.of(common.getFee(), common.feeAssetId))
                         .timestamp(common.timestamp == 0 ? System.currentTimeMillis() : common.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), SetAssetScriptTransaction.class);
+        return node().waitForTransaction(node().broadcast(signedTx).id(), SetAssetScriptTransactionInfo.class);
     }
 
-    public TxInfo<SetAssetScriptTransaction> setAssetScript(AssetId assetId, String script, Consumer<CommonParams<?>> params) {
+    public SetAssetScriptTransactionInfo setAssetScript(AssetId assetId, String script, Consumer<CommonParams<?>> params) {
         return setAssetScript(assetId, node().compileScript(Script.setAssetType(script)).script(), params);
     }
 
-    public TxInfo<SetAssetScriptTransaction> setAssetScript(AssetId assetId, Base64String compiledScript) {
+    public SetAssetScriptTransactionInfo setAssetScript(AssetId assetId, Base64String compiledScript) {
         return setAssetScript(assetId, compiledScript, opt -> {});
     }
 
-    public TxInfo<SetAssetScriptTransaction> setAssetScript(AssetId assetId, String script) {
+    public SetAssetScriptTransactionInfo setAssetScript(AssetId assetId, String script) {
         return setAssetScript(assetId, script, opt -> {});
     }
 
-    public TxInfo<InvokeScriptTransaction> invoke(Consumer<InvokeScriptParams> params) {
+    public InvokeScriptTransactionInfo invoke(Consumer<InvokeScriptParams> params) {
         InvokeScriptParams isp = new InvokeScriptParams(this);
         params.accept(isp);
         if (isp.signers.size() == 0)
@@ -537,10 +538,10 @@ public class Account {
                         .fee(Amount.of(isp.getFee(), isp.feeAssetId))
                         .timestamp(isp.timestamp == 0 ? System.currentTimeMillis() : isp.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), InvokeScriptTransaction.class);
+        return node().waitForTransaction(node().broadcast(signedTx).id(), InvokeScriptTransactionInfo.class);
     }
 
-    public TxInfo<InvokeScriptTransaction> invoke(DAppCall call, Consumer<InvokeScriptParamsOptional> params) {
+    public InvokeScriptTransactionInfo invoke(DAppCall call, Consumer<InvokeScriptParamsOptional> params) {
         InvokeScriptParamsOptional ispOpt = new InvokeScriptParamsOptional(this);
         params.accept(ispOpt);
         return invoke(is -> is
@@ -553,11 +554,11 @@ public class Account {
                 .signedBy(ispOpt.signers.toArray(new Account[0])));
     }
 
-    public TxInfo<InvokeScriptTransaction> invoke(DAppCall call, Amount... payments) {
+    public InvokeScriptTransactionInfo invoke(DAppCall call, Amount... payments) {
         return invoke(i -> i.dApp(call.getDApp()).function(call.getFunction()).payments(payments));
     }
 
-    public TxInfo<UpdateAssetInfoTransaction> updateAssetInfo(AssetId assetId, String name, String description, Consumer<UpdateAssetInfoParams> params) {
+    public UpdateAssetInfoTransactionInfo updateAssetInfo(AssetId assetId, String name, String description, Consumer<UpdateAssetInfoParams> params) {
         UpdateAssetInfoParams uap = new UpdateAssetInfoParams(this);
         params.accept(uap);
         if (uap.signers.size() == 0)
@@ -569,10 +570,10 @@ public class Account {
                         .fee(Amount.of(uap.getFee(), uap.feeAssetId))
                         .timestamp(uap.timestamp == 0 ? System.currentTimeMillis() : uap.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), UpdateAssetInfoTransaction.class);
+        return node().waitForTransaction(node().broadcast(signedTx).id(), UpdateAssetInfoTransactionInfo.class);
     }
 
-    public TxInfo<UpdateAssetInfoTransaction> updateAssetInfo(AssetId assetId, String name, String description) {
+    public UpdateAssetInfoTransactionInfo updateAssetInfo(AssetId assetId, String name, String description) {
         return updateAssetInfo(assetId, name, description, opt -> {});
     }
 

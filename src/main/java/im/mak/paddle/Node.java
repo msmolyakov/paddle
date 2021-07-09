@@ -10,11 +10,9 @@ import com.spotify.docker.client.messages.PortBinding;
 import com.wavesplatform.transactions.account.PrivateKey;
 import com.wavesplatform.wavesj.*;
 import com.wavesplatform.wavesj.exceptions.NodeException;
-import im.mak.paddle.api.TxDebugInfo;
-import im.mak.paddle.api.TxInfo;
+import com.wavesplatform.wavesj.info.TransactionInfo;
 import im.mak.paddle.exceptions.ApiError;
 import im.mak.paddle.exceptions.NodeError;
-import com.wavesplatform.transactions.LeaseTransaction;
 import com.wavesplatform.transactions.Transaction;
 import com.wavesplatform.transactions.account.Address;
 import com.wavesplatform.transactions.common.*;
@@ -51,15 +49,16 @@ public class Node extends com.wavesplatform.wavesj.Node {
         return instance;
     }
 
-    private final Settings conf;
-    private Account faucet;
+    protected final Settings conf;
+    protected final Account faucet;
 
-    private Node() throws NodeException, IOException, URISyntaxException {
+    protected Node() throws NodeException, IOException, URISyntaxException {
         super(maybeRunDockerContainer());
         conf = new Settings();
+        faucet = new Account(PrivateKey.fromSeed(conf().faucetSeed));
     }
 
-    private static String maybeRunDockerContainer() {
+    protected static String maybeRunDockerContainer() {
         Settings conf = new Settings();
 
         if (conf.dockerImage != null) {
@@ -122,7 +121,19 @@ public class Node extends com.wavesplatform.wavesj.Node {
         return conf.apiUrl;
     }
 
-    private static <T> T throwErrorOrGet(Callable<T> mightThrowException) {
+    public Settings conf() {
+        return conf;
+    }
+
+    public Account faucet() {
+        return faucet;
+    }
+
+    public int minAssetInfoUpdateInterval() {
+        return conf().minAssetInfoUpdateInterval;
+    }
+
+    protected <T> T throwErrorOrGet(Callable<T> mightThrowException) {
         try {
             return mightThrowException.call();
         } catch (IOException e) {
@@ -132,119 +143,6 @@ public class Node extends com.wavesplatform.wavesj.Node {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public int minAssetInfoUpdateInterval() {
-        return this.conf.minAssetInfoUpdateInterval;
-    }
-
-    public Account faucet() {
-        if (faucet == null)
-            faucet = new Account(PrivateKey.fromSeed(conf.faucetSeed));
-        return faucet;
-    }
-
-    public TransactionInfo waitForTransaction(Id id, int waitingInSeconds) {
-        int pollingIntervalInMillis = 100;
-
-        if (waitingInSeconds < 1)
-            throw new NodeError("waitForTransaction: waiting value must be positive. Current: " + waitingInSeconds);
-
-        for (long spentMillis = 0; spentMillis < waitingInSeconds * 1000L; spentMillis += pollingIntervalInMillis) {
-            try {
-                return this.getTransactionInfo(id);
-            } catch (NodeError|ApiError e) {
-                try {
-                    Thread.sleep(pollingIntervalInMillis);
-                } catch (InterruptedException ignored) {}
-            }
-        }
-        throw new NodeError("Could not wait for transaction " + id + " in " + waitingInSeconds + " seconds");
-    }
-
-    //TODO move all waiting functions to WavesJ
-    public TransactionInfo waitForTransaction(Id id) {
-        return waitForTransaction(id, (int)(conf.blockInterval / 1000));
-    }
-
-    public <T extends Transaction> TxInfo<T> waitForTransaction(Id id, Class<T> txClass, int waitingInSeconds) {
-        TransactionInfo info = this.waitForTransaction(id, waitingInSeconds);
-        return new TxInfo<>(info.tx(), info.applicationStatus(), info.height());
-    }
-
-    public <T extends Transaction> TxInfo<T> waitForTransaction(Id id, Class<T> txClass) {
-        TransactionInfo info = this.waitForTransaction(id);
-        return new TxInfo<>(info.tx(), info.applicationStatus(), info.height());
-    }
-
-    public int waitForHeight(int target, int blockWaitingInSeconds) {
-        int start = this.getHeight();
-        int prev = start;
-        int pollingIntervalInMillis = 100;
-
-        if (blockWaitingInSeconds < 1)
-            throw new NodeError("waitForHeight: waiting value must be positive. Current: " + blockWaitingInSeconds);
-
-        for (long spentMillis = 0; spentMillis < blockWaitingInSeconds * 1000L; spentMillis += pollingIntervalInMillis) {
-            try {
-                int current = this.getHeight();
-
-                if (current >= target)
-                    return current;
-                else if (current > prev) {
-                    prev = current;
-                    spentMillis = 0;
-                }
-            } catch (NodeError|ApiError ignored) {}
-
-            try {
-                Thread.sleep(pollingIntervalInMillis);
-            } catch (InterruptedException ignored) {}
-        }
-        throw new NodeError("Could not wait for the height to rise from " + start + " to " + target +
-                ": height " + prev + " did not grow for " + blockWaitingInSeconds + " seconds");
-    }
-
-    public int waitForHeight(int expectedHeight) {
-        return waitForHeight(expectedHeight, (int)(conf.blockInterval * 3 / 1000));
-    }
-
-    public int waitNBlocks(int blocksCount, int blockWaitingInSeconds) {
-        if (blockWaitingInSeconds < 1)
-            throw new NodeError("waitNBlocks: waiting value must be positive. Current: " + blockWaitingInSeconds);
-        return waitForHeight(this.getHeight() + blocksCount, blockWaitingInSeconds);
-    }
-
-    public int waitNBlocks(int blocksCount) {
-        return waitNBlocks(blocksCount, (int)(conf.blockInterval * 3 / 1000));
-    }
-
-    //TODO move to WavesJ
-    public <T extends Transaction> TxInfo<T> getTransactionInfo(Id txId, Class<T> txClass) {
-        try {
-            TransactionInfo info = super.getTransactionInfo(txId);
-            return new TxInfo<>(info.tx(), info.applicationStatus(), info.height());
-        } catch (IOException e) {
-            throw new NodeError(e);
-        } catch (NodeException e) {
-            throw new ApiError(e.getErrorCode(), e.getMessage());
-        }
-    }
-
-    @Override //TODO change to /transactions/info
-    public TxDebugInfo getStateChanges(Id txId) {
-        return throwErrorOrGet(() -> {
-            TransactionDebugInfo info = super.getStateChanges(txId);
-            return new TxDebugInfo(info.tx(), info.applicationStatus(), info.height(), info.stateChanges());
-        });
-    }
-
-    //TODO move to WavesJ
-    public <T extends Transaction> T getUnconfirmedTransaction(Id txId, Class<T> txClass) {
-        return throwErrorOrGet(() -> {
-            Transaction tx = super.getUnconfirmedTransaction(txId);
-            return (T) tx;
-        });
     }
 
     @Override
@@ -403,6 +301,11 @@ public class Node extends com.wavesplatform.wavesj.Node {
     }
 
     @Override
+    public int getBlockHeight(long timestamp) {
+        return throwErrorOrGet(() -> super.getBlockHeight(timestamp));
+    }
+
+    @Override
     public int getBlocksDelay(Base58String startBlockId, int blocksNum) {
         return throwErrorOrGet(() -> super.getBlocksDelay(startBlockId, blocksNum));
     }
@@ -468,28 +371,28 @@ public class Node extends com.wavesplatform.wavesj.Node {
     }
 
     @Override
-    public List<TransactionDebugInfo> getStateChangesByAddress(Address address, int limit, Id afterTxId) {
-        return throwErrorOrGet(() -> super.getStateChangesByAddress(address, limit, afterTxId));
-    }
-
-    @Override
-    public List<TransactionDebugInfo> getStateChangesByAddress(Address address, int limit) {
-        return throwErrorOrGet(() -> super.getStateChangesByAddress(address, limit));
-    }
-
-    @Override
-    public List<TransactionDebugInfo> getStateChangesByAddress(Address address) {
-        return throwErrorOrGet(() -> super.getStateChangesByAddress(address));
-    }
-
-    @Override
     public <T extends Transaction> Validation validateTransaction(T transaction) {
         return throwErrorOrGet(() -> super.validateTransaction(transaction));
     }
 
     @Override
-    public List<LeaseTransaction> getActiveLeases(Address address) {
+    public List<LeaseInfo> getActiveLeases(Address address) {
         return throwErrorOrGet(() -> super.getActiveLeases(address));
+    }
+
+    @Override
+    public LeaseInfo getLeaseInfo(Id leaseId) {
+        return throwErrorOrGet(() -> super.getLeaseInfo(leaseId));
+    }
+
+    @Override
+    public List<LeaseInfo> getLeasesInfo(List<Id> leaseIds) {
+        return throwErrorOrGet(() -> super.getLeasesInfo(leaseIds));
+    }
+
+    @Override
+    public List<LeaseInfo> getLeasesInfo(Id... leaseIds) {
+        return throwErrorOrGet(() -> super.getLeasesInfo(leaseIds));
     }
 
     @Override
@@ -505,6 +408,11 @@ public class Node extends com.wavesplatform.wavesj.Node {
     @Override
     public TransactionInfo getTransactionInfo(Id txId) {
         return throwErrorOrGet(() -> super.getTransactionInfo(txId));
+    }
+
+    @Override
+    public <T extends TransactionInfo> T getTransactionInfo(Id txId, Class<T> transactionInfoClass) {
+        return throwErrorOrGet(() -> super.getTransactionInfo(txId, transactionInfoClass));
     }
 
     @Override
@@ -556,4 +464,64 @@ public class Node extends com.wavesplatform.wavesj.Node {
     public ScriptInfo compileScript(String source) {
         return throwErrorOrGet(() -> super.compileScript(source));
     }
+
+    @Override
+    public TransactionInfo waitForTransaction(Id id, int waitingInSeconds) {
+        return throwErrorOrGet(() -> super.waitForTransaction(id, waitingInSeconds));
+    }
+
+    @Override
+    public TransactionInfo waitForTransaction(Id id) {
+        return throwErrorOrGet(() -> super.waitForTransaction(id));
+    }
+
+    @Override
+    public <T extends TransactionInfo> T waitForTransaction(Id id, Class<T> infoClass) {
+        return throwErrorOrGet(() -> super.waitForTransaction(id, infoClass));
+    }
+
+    @Override
+    public void waitForTransactions(List<Id> ids, int waitingInSeconds) {
+        throwErrorOrGet(() -> {
+            super.waitForTransactions(ids, waitingInSeconds);
+            return true;
+        });
+    }
+
+    @Override
+    public void waitForTransactions(List<Id> ids) {
+        throwErrorOrGet(() -> {
+            super.waitForTransactions(ids);
+            return true;
+        });
+    }
+
+    @Override
+    public void waitForTransactions(Id... ids) {
+        throwErrorOrGet(() -> {
+            super.waitForTransactions(ids);
+            return true;
+        });
+    }
+
+    @Override
+    public int waitForHeight(int target, int waitingInSeconds) {
+        return throwErrorOrGet(() -> super.waitForHeight(target, waitingInSeconds));
+    }
+
+    @Override
+    public int waitForHeight(int expectedHeight) {
+        return throwErrorOrGet(() -> super.waitForHeight(expectedHeight));
+    }
+
+    @Override
+    public int waitBlocks(int blocksCount, int waitingInSeconds) {
+        return throwErrorOrGet(() -> super.waitBlocks(blocksCount, waitingInSeconds));
+    }
+
+    @Override
+    public int waitBlocks(int blocksCount) {
+        return throwErrorOrGet(() -> super.waitBlocks(blocksCount));
+    }
+
 }

@@ -38,13 +38,13 @@ Read this documentation in [English](README.md).
 
 ### Требования
 
-- Java 8 и новее;
+- Java 11 и новее;
 - Docker 17.03.1 и новее, если нужно использовать ноду Waves в Docker.\
-  Для Windows установите последний Docker for Windows.
+  Для Windows установить последний Docker for Windows.
 
 ### Установка
 
-Самый простой способ начать новый проект - создать его из GitHub-шаблона [paddle-example](https://github.com/msmolyakov/paddle-example).
+Самый простой способ начать новый проект — создать его из GitHub-шаблона [paddle-example](https://github.com/msmolyakov/paddle-example).
 
 Или, если уже есть существующий проект, добавьте Paddle как зависимость.
 
@@ -54,7 +54,7 @@ Read this documentation in [English](README.md).
 <dependency>
     <groupId>im.mak</groupId>
     <artifactId>paddle</artifactId>
-    <version>1.0.0-rc6</version>
+    <version>1.0.0-rc7</version>
 </dependency>
 ```
 
@@ -62,12 +62,12 @@ Read this documentation in [English](README.md).
 
 Groovy DSL:
 ```groovy
-implementation 'im.mak:paddle:1.0.0-rc6'
+implementation 'im.mak:paddle:1.0.0-rc7'
 ```
 
 Kotlin DSL:
 ```kotlin
-compile("im.mak:paddle:1.0.0-rc6")
+compile("im.mak:paddle:1.0.0-rc7")
 ```
 
 ### Пример использования

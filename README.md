@@ -38,7 +38,7 @@ Paddle is a Java library to write tests for your dApps and other smart contracts
 
 ### Requirements
 
-- Java 8 or higher;
+- Java 11 or higher;
 - Docker 17.03.1 or newer if you want to use Waves Node in Docker. On Windows, install the latest "Docker for Windows".
 
 ### Installation
@@ -53,7 +53,7 @@ Or add Paddle as dependency to your existing project.
 <dependency>
     <groupId>im.mak</groupId>
     <artifactId>paddle</artifactId>
-    <version>1.0.0-rc6</version>
+    <version>1.0.0-rc7</version>
 </dependency>
 ```
 
@@ -61,12 +61,12 @@ Or add Paddle as dependency to your existing project.
 
 Groovy DSL:
 ```groovy
-implementation 'im.mak:paddle:1.0.0-rc6'
+implementation 'im.mak:paddle:1.0.0-rc7'
 ```
 
 Kotlin DSL:
 ```kotlin
-compile("im.mak:paddle:1.0.0-rc6")
+compile("im.mak:paddle:1.0.0-rc7")
 ```
 
 ### Simple usage
