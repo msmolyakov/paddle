@@ -25,26 +25,48 @@ import static im.mak.paddle.Node.node;
 public class Account {
 
     private final PrivateKey privateKey;
+    private final Node node;
 
     /* CONSTRUCTOR */
-
-    public Account(PrivateKey privateKey, long initialWavesBalance) {
+    
+    public Account(PrivateKey privateKey, long initialWavesBalance, Node node) {
         this.privateKey = Common.notNull(privateKey, "Private key");
+        this.node = node == null ? node() : node;
 
         if (initialWavesBalance > 0)
-            node().faucet().transfer(this, initialWavesBalance, AssetId.WAVES);
+            node.faucet().transfer(this, initialWavesBalance, AssetId.WAVES);
+    }
+
+    public Account(PrivateKey privateKey, long initialWavesBalance) {
+        this(privateKey, initialWavesBalance, null);
+    }
+
+    public Account(PrivateKey privateKey, Node node) {
+        this(privateKey, 0, node);
     }
 
     public Account(PrivateKey privateKey) {
         this(privateKey, 0);
     }
 
+    public Account(String seedPhrase, long initialWavesBalance, Node node) {
+        this(PrivateKey.fromSeed(seedPhrase), initialWavesBalance, node);
+    }
+
     public Account(String seedPhrase, long initialWavesBalance) {
         this(PrivateKey.fromSeed(seedPhrase), initialWavesBalance);
     }
 
+    public Account(long initialWavesBalance, Node node) {
+        this(Crypto.getRandomSeedPhrase(), initialWavesBalance, node);
+    }
+
     public Account(long initialWavesBalance) {
         this(Crypto.getRandomSeedPhrase(), initialWavesBalance);
+    }
+
+    public Account(Node node) {
+        this(0, node);
     }
 
     public Account() {
@@ -68,35 +90,35 @@ public class Account {
     /* REST API */
 
     public ScriptInfo getScriptInfo() {
-        return node().getScriptInfo(address());
+        return node.getScriptInfo(address());
     }
 
     public ScriptMeta getScriptMeta() {
-        return node().getScriptMeta(address());
+        return node.getScriptMeta(address());
     }
 
     public long getWavesBalance() {
-        return node().getBalance(address());
+        return node.getBalance(address());
     }
 
     public BalanceDetails getWavesBalanceDetails() {
-        return node().getBalanceDetails(address());
+        return node.getBalanceDetails(address());
     }
 
     public List<HistoryBalance> getWavesBalanceHistory() {
-        return node().getBalanceHistory(address());
+        return node.getBalanceHistory(address());
     }
 
     public List<LeaseInfo> getActiveLeases() {
-        return node().getActiveLeases(address());
+        return node.getActiveLeases(address());
     }
 
     public List<AssetBalance> getAssetsBalance() {
-        return node().getAssetsBalance(address());
+        return node.getAssetsBalance(address());
     }
 
     public long getAssetBalance(AssetId assetId) {
-        return node().getAssetBalance(address(), assetId);
+        return node.getAssetBalance(address(), assetId);
     }
 
     public long getAssetBalance(Asset asset) {
@@ -108,7 +130,7 @@ public class Account {
     }
 
     public List<AssetDetails> getNft(int limit, AssetId after) {
-        return node().getNft(address(), limit, after);
+        return node.getNft(address(), limit, after);
     }
 
     public List<AssetDetails> getNft(int limit, Asset after) {
@@ -116,35 +138,35 @@ public class Account {
     }
 
     public List<AssetDetails> getNft(int limit) {
-        return node().getNft(address(), limit);
+        return node.getNft(address(), limit);
     }
 
     public List<AssetDetails> getNft() {
-        return node().getNft(address());
+        return node.getNft(address());
     }
 
     public List<Alias> getAliases() {
-        return node().getAliasesByAddress(address());
+        return node.getAliasesByAddress(address());
     }
 
     public List<Block> getGeneratedBlocks(int fromHeight, int toHeight) {
-        return node().getBlocksGeneratedBy(address(), fromHeight, toHeight);
+        return node.getBlocksGeneratedBy(address(), fromHeight, toHeight);
     }
 
     public List<DataEntry> getData() {
-        return node().getData(address());
+        return node.getData(address());
     }
 
     public List<DataEntry> getData(List<String> keys) {
-        return node().getData(address(), keys);
+        return node.getData(address(), keys);
     }
 
     public DataEntry getData(String key) {
-        return node().getData(address(), key);
+        return node.getData(address(), key);
     }
 
     public List<DataEntry> getData(Pattern regex) {
-        return node().getData(address(), regex);
+        return node.getData(address(), regex);
     }
 
     public Base64String getBinaryData(String key) {
@@ -164,15 +186,15 @@ public class Account {
     }
 
     public List<TransactionInfo> getTransactionsHistory() {
-        return node().getTransactionsByAddress(address());
+        return node.getTransactionsByAddress(address());
     }
 
     public List<TransactionInfo> getTransactionsHistory(int limit) {
-        return node().getTransactionsByAddress(address(), limit);
+        return node.getTransactionsByAddress(address(), limit);
     }
 
     public List<TransactionInfo> getTransactionsHistory(int limit, Id afterTxId) {
-        return node().getTransactionsByAddress(address(), limit, afterTxId);
+        return node.getTransactionsByAddress(address(), limit, afterTxId);
     }
 
     /* SIGN */
@@ -215,7 +237,7 @@ public class Account {
                         .fee(Amount.of(ip.getFee(), ip.feeAssetId))
                         .timestamp(ip.timestamp == 0 ? System.currentTimeMillis() : ip.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), IssueTransactionInfo.class);
+        return node.waitForTransaction(node.broadcast(signedTx).id(), IssueTransactionInfo.class);
     }
 
     public IssueTransactionInfo issue() {
@@ -235,7 +257,7 @@ public class Account {
                         .fee(Amount.of(ip.getFee(), ip.feeAssetId))
                         .timestamp(ip.timestamp == 0 ? System.currentTimeMillis() : ip.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), IssueTransactionInfo.class);
+        return node.waitForTransaction(node.broadcast(signedTx).id(), IssueTransactionInfo.class);
     }
 
     public IssueTransactionInfo issueNft() {
@@ -255,8 +277,8 @@ public class Account {
                         .fee(Amount.of(tp.getFee(), tp.feeAssetId))
                         .timestamp(tp.timestamp == 0 ? System.currentTimeMillis() : tp.timestamp)
                         .getUnsigned());
-        Id txId = node().broadcast(signedTx).id();
-        return node().waitForTransaction(txId, TransferTransactionInfo.class);
+        Id txId = node.broadcast(signedTx).id();
+        return node.waitForTransaction(txId, TransferTransactionInfo.class);
     }
 
     public TransferTransactionInfo transfer(Account to, Amount amount, Consumer<TransferParams> params) {
@@ -292,7 +314,7 @@ public class Account {
                         .fee(Amount.of(rp.getFee(), rp.feeAssetId))
                         .timestamp(rp.timestamp == 0 ? System.currentTimeMillis() : rp.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), ReissueTransactionInfo.class);
+        return node.waitForTransaction(node.broadcast(signedTx).id(), ReissueTransactionInfo.class);
     }
 
     public ReissueTransactionInfo reissue(long amount, AssetId assetId, Consumer<ReissueParams> params) {
@@ -319,7 +341,7 @@ public class Account {
                         .fee(Amount.of(common.getFee(), common.feeAssetId))
                         .timestamp(common.timestamp == 0 ? System.currentTimeMillis() : common.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), BurnTransactionInfo.class);
+        return node.waitForTransaction(node.broadcast(signedTx).id(), BurnTransactionInfo.class);
     }
 
     public BurnTransactionInfo burn(long amount, AssetId assetId, Consumer<CommonParams<?>> params) {
@@ -346,7 +368,7 @@ public class Account {
                         .fee(Amount.of(ep.getFee(), ep.feeAssetId))
                         .timestamp(ep.timestamp == 0 ? System.currentTimeMillis() : ep.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), ExchangeTransactionInfo.class);
+        return node.waitForTransaction(node.broadcast(signedTx).id(), ExchangeTransactionInfo.class);
     }
 
     public ExchangeTransactionInfo exchange(Order order1, Order order2, long amount, long price) {
@@ -364,7 +386,7 @@ public class Account {
                         .fee(Amount.of(common.getFee(), common.feeAssetId))
                         .timestamp(common.timestamp == 0 ? System.currentTimeMillis() : common.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), LeaseTransactionInfo.class);
+        return node.waitForTransaction(node.broadcast(signedTx).id(), LeaseTransactionInfo.class);
     }
 
     public LeaseTransactionInfo lease(Recipient to, long amount) {
@@ -390,7 +412,7 @@ public class Account {
                         .fee(Amount.of(common.getFee(), common.feeAssetId))
                         .timestamp(common.timestamp == 0 ? System.currentTimeMillis() : common.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), LeaseCancelTransactionInfo.class);
+        return node.waitForTransaction(node.broadcast(signedTx).id(), LeaseCancelTransactionInfo.class);
     }
 
     public LeaseCancelTransactionInfo cancelLease(Id leaseId) {
@@ -408,7 +430,7 @@ public class Account {
                         .fee(Amount.of(common.getFee(), common.feeAssetId))
                         .timestamp(common.timestamp == 0 ? System.currentTimeMillis() : common.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), CreateAliasTransactionInfo.class);
+        return node.waitForTransaction(node.broadcast(signedTx).id(), CreateAliasTransactionInfo.class);
     }
 
     public CreateAliasTransactionInfo createAlias(String alias) {
@@ -432,7 +454,7 @@ public class Account {
                         .fee(Amount.of(mtp.getFee(), mtp.feeAssetId))
                         .timestamp(mtp.timestamp == 0 ? System.currentTimeMillis() : mtp.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), MassTransferTransactionInfo.class);
+        return node.waitForTransaction(node.broadcast(signedTx).id(), MassTransferTransactionInfo.class);
     }
 
     public DataTransactionInfo writeData(Consumer<DataParams> params) {
@@ -446,7 +468,7 @@ public class Account {
                         .fee(Amount.of(dp.getFee(), dp.feeAssetId))
                         .timestamp(dp.timestamp == 0 ? System.currentTimeMillis() : dp.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), DataTransactionInfo.class);
+        return node.waitForTransaction(node.broadcast(signedTx).id(), DataTransactionInfo.class);
     }
 
     public SetScriptTransactionInfo setScript(Base64String compiledScript, Consumer<CommonParams<?>> params) {
@@ -460,11 +482,11 @@ public class Account {
                         .fee(Amount.of(common.getFee(), common.feeAssetId))
                         .timestamp(common.timestamp == 0 ? System.currentTimeMillis() : common.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), SetScriptTransactionInfo.class);
+        return node.waitForTransaction(node.broadcast(signedTx).id(), SetScriptTransactionInfo.class);
     }
 
     public SetScriptTransactionInfo setScript(String script, Consumer<CommonParams<?>> params) {
-        return setScript(node().compileScript(script).script(), params);
+        return setScript(node.compileScript(script).script(), params);
     }
 
     public SetScriptTransactionInfo setScript(Base64String compiledScript) {
@@ -486,7 +508,7 @@ public class Account {
                         .fee(Amount.of(common.getFee(), common.feeAssetId))
                         .timestamp(common.timestamp == 0 ? System.currentTimeMillis() : common.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), SponsorFeeTransactionInfo.class);
+        return node.waitForTransaction(node.broadcast(signedTx).id(), SponsorFeeTransactionInfo.class);
     }
 
     public SponsorFeeTransactionInfo sponsorFee(Amount amount, Consumer<CommonParams<?>> params) {
@@ -512,11 +534,11 @@ public class Account {
                         .fee(Amount.of(common.getFee(), common.feeAssetId))
                         .timestamp(common.timestamp == 0 ? System.currentTimeMillis() : common.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), SetAssetScriptTransactionInfo.class);
+        return node.waitForTransaction(node.broadcast(signedTx).id(), SetAssetScriptTransactionInfo.class);
     }
 
     public SetAssetScriptTransactionInfo setAssetScript(AssetId assetId, String script, Consumer<CommonParams<?>> params) {
-        return setAssetScript(assetId, node().compileScript(Script.setAssetType(script)).script(), params);
+        return setAssetScript(assetId, node.compileScript(Script.setAssetType(script)).script(), params);
     }
 
     public SetAssetScriptTransactionInfo setAssetScript(AssetId assetId, Base64String compiledScript) {
@@ -538,7 +560,7 @@ public class Account {
                         .fee(Amount.of(isp.getFee(), isp.feeAssetId))
                         .timestamp(isp.timestamp == 0 ? System.currentTimeMillis() : isp.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), InvokeScriptTransactionInfo.class);
+        return node.waitForTransaction(node.broadcast(signedTx).id(), InvokeScriptTransactionInfo.class);
     }
 
     public InvokeScriptTransactionInfo invoke(DAppCall call, Consumer<InvokeScriptParamsOptional> params) {
@@ -570,7 +592,7 @@ public class Account {
                         .fee(Amount.of(uap.getFee(), uap.feeAssetId))
                         .timestamp(uap.timestamp == 0 ? System.currentTimeMillis() : uap.timestamp)
                         .getUnsigned());
-        return node().waitForTransaction(node().broadcast(signedTx).id(), UpdateAssetInfoTransactionInfo.class);
+        return node.waitForTransaction(node.broadcast(signedTx).id(), UpdateAssetInfoTransactionInfo.class);
     }
 
     public UpdateAssetInfoTransactionInfo updateAssetInfo(AssetId assetId, String name, String description) {

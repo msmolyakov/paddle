@@ -42,9 +42,10 @@ public class Settings {
         Config _conf = overridden.getObject("paddle." + name).toConfig();
 
         apiUrl = _conf.getString("api-url");
-        blockInterval = _conf.getDuration("block-interval").toMillis();
-        minAssetInfoUpdateInterval = _conf.getInt("min-asset-info-update-interval");
-        faucetSeed = _conf.getString("faucet-seed");
+        blockInterval = _conf.hasPath("block-interval") ? _conf.getDuration("block-interval").toMillis() : 60_000;
+        minAssetInfoUpdateInterval = _conf.hasPath("min-asset-info-update-interval")
+                ? _conf.getInt("min-asset-info-update-interval") : 0;
+        faucetSeed = _conf.hasPath("faucet-seed") ? _conf.getString("faucet-seed") : null;
         dockerImage = _conf.hasPath("docker-image") ? _conf.getString("docker-image") : null;
         autoShutdown = !_conf.hasPath("auto-shutdown") || _conf.getBoolean("auto-shutdown");
     }

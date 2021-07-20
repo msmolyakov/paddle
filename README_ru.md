@@ -54,7 +54,7 @@ Read this documentation in [English](README.md).
 <dependency>
     <groupId>im.mak</groupId>
     <artifactId>paddle</artifactId>
-    <version>1.0.0-rc7</version>
+    <version>1.0.0-rc9</version>
 </dependency>
 ```
 
@@ -62,12 +62,12 @@ Read this documentation in [English](README.md).
 
 Groovy DSL:
 ```groovy
-implementation 'im.mak:paddle:1.0.0-rc7'
+implementation 'im.mak:paddle:1.0.0-rc9'
 ```
 
 Kotlin DSL:
 ```kotlin
-compile("im.mak:paddle:1.0.0-rc7")
+compile("im.mak:paddle:1.0.0-rc9")
 ```
 
 ### Пример использования
