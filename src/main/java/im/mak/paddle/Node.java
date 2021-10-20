@@ -52,16 +52,14 @@ public class Node extends com.wavesplatform.wavesj.Node {
     protected final Settings conf;
     protected final Account faucet;
 
-    protected Node() throws NodeException, IOException, URISyntaxException {
-        super(maybeRunDockerContainer(new Settings()));
-        conf = new Settings();
-        faucet = conf.faucetSeed == null ? null : new Account(PrivateKey.fromSeed(conf().faucetSeed));
-    }
-
     public Node(Settings settings) throws NodeException, IOException, URISyntaxException {
         super(maybeRunDockerContainer(settings));
         conf = settings;
-        faucet = conf.faucetSeed == null ? null : new Account(PrivateKey.fromSeed(conf().faucetSeed));
+        faucet = conf.faucetSeed == null ? null : new Account(PrivateKey.fromSeed(conf().faucetSeed), this);
+    }
+
+    protected Node() throws NodeException, IOException, URISyntaxException {
+        this(new Settings());
     }
 
     protected static String maybeRunDockerContainer(Settings conf) {

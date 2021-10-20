@@ -34,7 +34,7 @@ public class Account {
         this.node = node == null ? node() : node;
 
         if (initialWavesBalance > 0)
-            node.faucet().transfer(this, initialWavesBalance, AssetId.WAVES);
+            this.node.faucet().transfer(this, initialWavesBalance, AssetId.WAVES);
     }
 
     public Account(PrivateKey privateKey, long initialWavesBalance) {

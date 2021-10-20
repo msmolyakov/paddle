@@ -1,6 +1,5 @@
 package im.mak.paddle;
 
-import im.mak.paddle.exceptions.NodeError;
 import org.junit.jupiter.api.*;
 
 import static im.mak.paddle.Node.node;
@@ -25,11 +24,10 @@ class NodeTest {
         void errorIfCantReachTheHeight() {
             int current = node().getHeight();
 
-            NodeError e = assertThrows(NodeError.class, () ->
-                    node().waitForHeight(current + 100, 1)
-            );
-
-            assertThat(e).hasMessageStartingWith(
+            assertThat(
+                    assertThrows(RuntimeException.class, () ->
+                            node().waitForHeight(current + 100, 1))
+            ).hasMessageEndingWith(
                     "Could not wait for the height to rise from " + current + " to " + (current + 100) +
                             ": height " + current + " did not grow for 1 seconds");
         }
@@ -52,11 +50,10 @@ class NodeTest {
         void errorIfCantWaitNBlocks() {
             int current = node().getHeight();
 
-            NodeError e = assertThrows(NodeError.class, () ->
-                    node().waitBlocks(100, 1)
-            );
-
-            assertThat(e).hasMessageStartingWith(
+            assertThat(
+                    assertThrows(RuntimeException.class, () ->
+                            node().waitBlocks(100, 1))
+            ).hasMessageEndingWith(
                     "Could not wait for the height to rise from " + current + " to " + (current + 100) +
                             ": height " + current + " did not grow for 1 seconds");
         }

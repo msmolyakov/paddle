@@ -6,7 +6,7 @@
 
     <groupId>im.mak</groupId>
     <artifactId>paddle</artifactId>
-    <version>1.0.0-rc9</version>
+    <version>1.0.0-rc10</version>
 
     <name>Paddle</name>
     <description>Paddle library helps developers to write tests for smart contracts on Waves blockchain</description>
@@ -201,7 +201,7 @@
         <dependency>
             <groupId>com.wavesplatform</groupId>
             <artifactId>wavesj</artifactId>
-            <version>1.2.1-SNAPSHOT</version>
+            <version>1.2.3</version>
         </dependency>
         <dependency>
             <groupId>com.spotify</groupId>
@@ -220,12 +220,12 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.7.2</version>
+            <version>5.8.1</version>
         </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>3.20.2</version>
+            <version>3.21.0</version>
         </dependency>
     </dependencies>
 
