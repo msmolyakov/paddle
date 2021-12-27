@@ -1,8 +1,10 @@
 package im.mak.paddle;
 
+import com.wavesplatform.wavesj.ScriptInfo;
 import org.junit.jupiter.api.*;
 
 import static im.mak.paddle.Node.node;
+import static im.mak.paddle.util.ScriptUtil.fromFile;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -56,6 +58,34 @@ class NodeTest {
             ).hasMessageEndingWith(
                     "Could not wait for the height to rise from " + current + " to " + (current + 100) +
                             ": height " + current + " did not grow for 1 seconds");
+        }
+
+    }
+
+    @Nested
+    class CompileScript {
+        private final String INITIAL_SCRIPT = fromFile("wallet.ride");
+        private final String ERROR_SCRIPT = fromFile("wallet.ride").replace("i.payment", "v.payment");
+
+        @Test
+        void canCompileScript() {
+            ScriptInfo scriptInfo = node().compileScript(INITIAL_SCRIPT);
+            assertThat(scriptInfo.script()).isNotEqualTo("");
+        }
+
+        @Test
+        void canCompileScriptCompacted() {
+            ScriptInfo scriptInfo = node().compileScript(INITIAL_SCRIPT, true);
+            assertThat(scriptInfo.script()).isNotEqualTo("");
+        }
+
+        @Test
+        void cantCompileScriptWithError() {
+            assertThat(
+                    assertThrows(RuntimeException.class, () ->
+                            node().compileScript(ERROR_SCRIPT, true))
+            ).hasMessageContaining(
+                    " A definition of 'v' is not found");
         }
 
     }
