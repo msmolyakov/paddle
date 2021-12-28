@@ -467,7 +467,7 @@ public class Node extends com.wavesplatform.wavesj.Node {
         return throwErrorOrGet(() -> super.compileScript(source));
     }
 
-    //@Override
+    @Override
     public ScriptInfo compileScript(String source, boolean enableCompaction) {
         return throwErrorOrGet(() -> super.compileScript(source, enableCompaction));
     }
