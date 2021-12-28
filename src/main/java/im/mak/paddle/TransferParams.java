@@ -59,11 +59,12 @@ public class TransferParams extends CommonParams<TransferParams> {
 
         if (this.feeAssetId.isWaves()) {
             this.additionalFee = amount;
-            return this;
         } else {
             long sponsoredMinFee = node().getAssetDetails(this.feeAssetId).minSponsoredAssetFee();
-            return additionalFee(amount * sponsoredMinFee);
+            this.additionalFee = amount * sponsoredMinFee;
         }
+
+        return this;
     }
 
     public TransferParams additionalFee(Amount amount) {
