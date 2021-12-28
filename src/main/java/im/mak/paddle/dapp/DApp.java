@@ -38,14 +38,29 @@ public abstract class DApp extends Account {
         setScript(script);
     }
 
+    public DApp(long initialBalance, String script, boolean enableCompaction) {
+        this(initialBalance);
+        setScript(script, enableCompaction);
+    }
+
     public DApp(PrivateKey privateKey, long initialBalance, String script) {
         this(privateKey, initialBalance);
         setScript(script);
     }
 
+    public DApp(PrivateKey privateKey, long initialBalance, String script, boolean enableCompaction) {
+        this(privateKey, initialBalance);
+        setScript(script, enableCompaction);
+    }
+
     public DApp(String seedPhrase, long initialBalance, String script) {
         this(seedPhrase, initialBalance);
         setScript(script);
+    }
+
+    public DApp(String seedPhrase, long initialBalance, String script, boolean enableCompaction) {
+        this(seedPhrase, initialBalance);
+        setScript(script, enableCompaction);
     }
 
 }

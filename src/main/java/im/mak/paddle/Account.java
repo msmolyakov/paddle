@@ -489,12 +489,20 @@ public class Account {
         return setScript(node.compileScript(script).script(), params);
     }
 
+    public SetScriptTransactionInfo setScript(String script, boolean enableCompaction, Consumer<CommonParams<?>> params) {
+        return setScript(node.compileScript(script, enableCompaction).script(), params);
+    }
+
     public SetScriptTransactionInfo setScript(Base64String compiledScript) {
         return setScript(compiledScript, opt -> {});
     }
 
     public SetScriptTransactionInfo setScript(String script) {
         return setScript(script, opt -> {});
+    }
+
+    public SetScriptTransactionInfo setScript(String script, boolean enableCompaction) {
+        return setScript(script, enableCompaction, opt -> {});
     }
 
     public SponsorFeeTransactionInfo sponsorFee(AssetId assetId, long minFeeAmount, Consumer<CommonParams<?>> params) {

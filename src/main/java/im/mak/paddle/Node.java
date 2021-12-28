@@ -468,6 +468,11 @@ public class Node extends com.wavesplatform.wavesj.Node {
     }
 
     @Override
+    public ScriptInfo compileScript(String source, boolean enableCompaction) {
+        return throwErrorOrGet(() -> super.compileScript(source, enableCompaction));
+    }
+
+    @Override
     public TransactionInfo waitForTransaction(Id id, int waitingInSeconds) {
         return throwErrorOrGet(() -> super.waitForTransaction(id, waitingInSeconds));
     }
