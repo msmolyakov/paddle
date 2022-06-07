@@ -6,6 +6,7 @@ import com.wavesplatform.transactions.common.Base64String;
 import com.wavesplatform.wavesj.ScriptInfo;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 
+import static im.mak.paddle.util.Constants.MIN_FEE;
 import static im.mak.paddle.util.Constants.EXTRA_FEE;
 import static im.mak.paddle.util.Constants.SENDER_FREE_COMPLEXITY;
 
@@ -21,7 +22,7 @@ public class SetScriptParams extends CommonParams<SetScriptParams> {
     protected long getFee() {
         ComparableVersion version1_4 = new ComparableVersion("Waves v1.4");
         ComparableVersion nodeVersion = new ComparableVersion(node().getVersion());
-        long totalWavesFee = SetScriptTransaction.MIN_FEE;
+        long totalWavesFee = MIN_FEE;
         if(nodeVersion.compareTo(version1_4) >= 0) {
             totalWavesFee *= (long) Math.ceil(this.compiledScript.bytes().length / 1024.0);
         }
