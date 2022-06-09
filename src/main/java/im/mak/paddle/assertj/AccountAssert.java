@@ -17,12 +17,12 @@ import static java.util.stream.Collectors.toList;
 
 public class AccountAssert extends AbstractAssert<AccountAssert, Account> {
 
-    public AccountAssert(Account actual) {
-        super(actual, AccountAssert.class);
-    }
-
     public static AccountAssert assertThat(Account actual) {
         return new AccountAssert(actual);
+    }
+
+    public AccountAssert(Account actual) {
+        super(actual, AccountAssert.class);
     }
 
     public AccountAssert hasNoData() {

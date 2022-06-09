@@ -6,6 +6,8 @@ import com.wavesplatform.transactions.common.AssetId;
 import com.wavesplatform.transactions.common.Recipient;
 import im.mak.paddle.Account;
 
+import java.math.BigDecimal;
+
 public interface Token {
 
     AssetId id();
@@ -13,12 +15,26 @@ public interface Token {
     long getQuantity();
     long getBalanceOf(Recipient recipient);
 
-    default long amount(double amount) {
-        return (long) (amount * (Math.pow(10L, decimals())));
+    default long toCoins(double tokens) {
+        return BigDecimal.valueOf(tokens).multiply(BigDecimal.valueOf(Math.pow(10, decimals()))).longValueExact();
     }
 
+    @Deprecated
+    default long amount(double amount) {
+        return toCoins(amount);
+    }
+
+    default Amount ofCoins(long coins) {
+        return Amount.of(coins, id());
+    }
+
+    default Amount ofTokens(double tokens) {
+        return ofCoins(amount(tokens));
+    }
+
+    @Deprecated
     default Amount of(double amount) {
-        return Amount.of(amount(amount), id());
+        return ofTokens(amount);
     }
 
     default long getBalanceOf(PrivateKey account) {
