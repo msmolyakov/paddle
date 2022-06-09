@@ -26,7 +26,7 @@ public class DataParams extends CommonParams<DataParams> {
 
         //calculation only by protobuf bytes, because latest version of DataTransaction is used by default
         DataTransaction tx = DataTransaction.builder(data).sender(sender.publicKey()).getUnsigned();
-        int payloadSize = tx.toProtobuf().getTransaction().getDataTransaction().getSerializedSize();
+        int payloadSize = tx.toProtobuf().getWavesTransaction().getDataTransaction().getSerializedSize();
         totalWavesFee += ((payloadSize - 1) / 1024) * MIN_FEE;
 
         return totalWavesFee;

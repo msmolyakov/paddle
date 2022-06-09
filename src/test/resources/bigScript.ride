@@ -1,0 +1,546 @@
+{-# STDLIB_VERSION 5 #-}
+{-# CONTENT_TYPE DAPP #-}
+{-# SCRIPT_TYPE ACCOUNT #-}
+
+let version = "1.0.0"
+let kVersion = "version"
+let kActive = "active"
+let kAssetIdA = "A_asset_id"
+let kAssetIdB = "B_asset_id"
+let kBalanceA = "A_asset_balance"
+let kBalanceB = "B_asset_balance"
+let kBalanceInitA = "A_asset_init"
+let kBalanceInitB = "B_asset_init"
+let kShareAssetId = "share_asset_id"
+let kShareAssetSupply = "share_asset_supply"
+let kFee = "commission"
+let kCause = "shutdown_cause"
+let kFirstHarvest = "first_harvest"
+let kFirstHarvestHeight = "first_harvest_height"
+let kShareLimit = "share_limit_on_first_harvest"
+let kBasePeriod = "base_period"
+let kPeriodLength = "period_length"
+let kStartHeight = "start_height"
+let kUSDNAddress = "staking_usdnnsbt_address"
+let kEURNAddress = "staking_eurn_address"
+let kLeasingAmount = "leasing_amount"
+let kUSDNAssetId = "usdn_asset_id"
+let kEURNAssetId = "eurn_asset_id"
+let kStakingAssets = "staking_assets"
+let kOracleActive = "active_all_contracts"
+let kOracleActiveExchangers = "active_global_exchangers"
+let kDiscounts = "discounts"
+let kDiscountValues = "discount_values"
+let kUserSwopInGov = "_SWOP_amount"
+
+let kAdminPubKey1 = "admin_pub_1"
+let kAdminPubKey2 = "admin_pub_2"
+let kAdminPubKey3 = "admin_pub_3"
+let kAdminInvokePubKey = "admin_invoke_pub"
+let kMoneyBoxAddress = "money_box_address"
+let kVotingAddress = "voting_address"
+let kGovAddress = "governance_address"
+
+let oracle = Address(base58'3PEbqViERCoKnmcSULh6n2aiMvUdSQdCsom')
+func getBase58FromOracle(key: String) = match oracle.getString(key) {
+    case string: String => string.fromBase58String()
+    case nothing => throw(key + "is empty")
+}
+
+let adminPubKey1 = getBase58FromOracle(kAdminPubKey1)
+let adminPubKey2 = getBase58FromOracle(kAdminPubKey2)
+let adminPubKey3 = getBase58FromOracle(kAdminPubKey3)
+let adminInvokePubKey = getBase58FromOracle(kAdminInvokePubKey)
+
+let moneyBoxAddress = Address(getBase58FromOracle(kMoneyBoxAddress))
+let votingAddress = Address(getBase58FromOracle(kVotingAddress))
+let govAddress = Address(getBase58FromOracle(kGovAddress))
+
+let USDN = getBase58FromOracle(kUSDNAssetId)
+let EURN = getBase58FromOracle(kEURNAssetId)
+
+let stakingAssets = oracle.getStringValue(kStakingAssets)
+let stakingUSDNAddress = Address(getBase58FromOracle(kUSDNAddress))
+let stakingEURNAddress = Address(getBase58FromOracle(kEURNAddress))
+
+let basePeriod = votingAddress.getInteger(kBasePeriod).valueOrErrorMessage("Empty kBasePeriod") # 0
+let startHeight = votingAddress.getInteger(kStartHeight).valueOrErrorMessage("Empty kStartHeight")
+let periodLength =  votingAddress.getInteger(kPeriodLength).valueOrErrorMessage("Empty kPeriodLength")  # 10102
+
+let firstHarvestEndPeriod = basePeriod + (height-startHeight)/periodLength + 3
+let active = oracle.getBooleanValue(kOracleActive) && oracle.getBooleanValue(kOracleActiveExchangers)
+let feeScale6 = 1000000
+let scale8 = 100000000
+
+func accountBalance(assetId: ByteVector|Unit, pool: Address) = match assetId {
+    case id: ByteVector => pool.assetBalance(id)
+    case waves: Unit => pool.wavesBalance().available
+}
+
+func stakedAmount(assetId: ByteVector|Unit, pool:Address) = {
+    let stakedAmountCalculated = match assetId {
+        case aId: ByteVector =>
+          if aId == USDN then {
+              stakingUSDNAddress.getInteger("rpd_balance_" + aId.toBase58String() + "_" + pool.toString())
+          } else if  aId == EURN then {
+              stakingEURNAddress.getInteger("%s%s%s__stakingBalance__" + aId.toBase58String() + "__" + pool.toString())
+          } else 0
+        case _:Unit => pool.getInteger(kLeasingAmount).valueOrElse(0)
+      }
+    match (stakedAmountCalculated) {
+        case i:Int => i
+        case _ => 0
+    }
+}
+
+func getAssetInfo(assetId: ByteVector|String|Unit) = match assetId {
+    case id: ByteVector|String =>
+        let (stringId, bytesId) = match id {
+            case aId: ByteVector => (aId.toBase58String(), aId)
+            case aId: String => (aId, aId.fromBase58String())
+        }
+        let info = assetInfo(bytesId).valueOrErrorMessage("Asset " + stringId + " doesn't exist")
+        (stringId, info.name, info.decimals)
+    case waves: Unit => ("WAVES", "WAVES", 8)
+}
+
+func suspend(cause: String) = [
+    BooleanEntry(kActive, false),
+    StringEntry(kCause, cause)
+]
+
+func calculateFeeDiscount(userAddr: Address) = {
+    let swopAmount = govAddress.getInteger(userAddr.toString() + kUserSwopInGov).valueOrElse(0)
+    let discountValues = oracle.getStringValue(kDiscountValues).split(",")
+    let discounts = oracle.getStringValue(kDiscounts).split(",")
+
+    if swopAmount >= parseIntValue(discountValues[0]) && swopAmount < parseIntValue(discountValues[1]) then
+        feeScale6 - parseIntValue(discounts[0])
+    else if swopAmount >= parseIntValue(discountValues[1]) && swopAmount < parseIntValue(discountValues[2]) then
+        feeScale6 - parseIntValue(discounts[1])
+    else if swopAmount >= parseIntValue(discountValues[2]) && swopAmount < parseIntValue(discountValues[3]) then
+        feeScale6 - parseIntValue(discounts[2])
+    else if swopAmount >= parseIntValue(discountValues[3]) && swopAmount < parseIntValue(discountValues[4]) then
+        feeScale6 - parseIntValue(discounts[3])
+    else if swopAmount >= parseIntValue(discountValues[4]) then
+        feeScale6 - parseIntValue(discounts[4])
+    else
+        feeScale6
+}
+
+
+func calculateFees(pmtAmount: Int, minAmountToReceive: Int, tokenFrom: Int, tokenTo: Int, fee: Int, feeGovernance: Int, caller:Address) = {
+    let amountWithoutFee = fraction(tokenTo, pmtAmount, pmtAmount + tokenFrom)
+    let feeDiscount = calculateFeeDiscount(caller)
+    let amountWithFee = amountWithoutFee.fraction(feeScale6 - fee.fraction(feeDiscount, feeScale6, CEILING), feeScale6)
+    let governanceReward = amountWithoutFee.fraction(feeGovernance.fraction(feeDiscount, feeScale6, CEILING), feeScale6)
+
+    if amountWithFee < minAmountToReceive then
+        throw("Calculated amount to receive " + amountWithFee.toString() + " is less than specified minimum " + minAmountToReceive.toString())
+    else
+        (amountWithoutFee, amountWithFee, governanceReward)
+}
+
+func suspendSuspicious(accountBalanceA: Int, accountBalanceB: Int, balanceA: Int, balanceB: Int, assetIdA:String, assetIdB:String) = {
+    suspend("Suspicious state. Actual balances: " + accountBalanceA.toString() + " " + assetIdA + ", " + accountBalanceB.toString() + " " + assetIdB
+        + ". State: " + balanceA.toString() + " " + assetIdA + ", " + balanceB.toString() + " " + assetIdB)
+}
+
+func isActive() = if active then unit else throw("DApp is inactive at this moment")
+
+func getPoolBalances(pool: Address, assetIdA: ByteVector|Unit, assetIdB: ByteVector|Unit) = {
+    let balanceA = pool.getIntegerValue(kBalanceA)
+    let balanceB = pool.getIntegerValue(kBalanceB)
+    let stakedAmountA = stakedAmount(assetIdA, pool)
+    let stakedAmountB = stakedAmount(assetIdB, pool)
+    let accountBalanceA = accountBalance(assetIdA, pool) + stakedAmountA
+    let accountBalanceB = accountBalance(assetIdB, pool) + stakedAmountB
+    let shareSupply = pool.getIntegerValue(kShareAssetSupply)
+    (balanceA, balanceB, accountBalanceA, accountBalanceB, shareSupply)
+}
+
+func getPoolAssets(pool: Address) = {
+    let strAssetIdA = pool.getStringValue(kAssetIdA)
+    let strAssetIdB = pool.getStringValue(kAssetIdB)
+    let assetIdA = if strAssetIdA == "WAVES" then unit else strAssetIdA.fromBase58String()
+    let assetIdB = if strAssetIdB == "WAVES" then unit else strAssetIdB.fromBase58String()
+    let shareAssetId = pool.getStringValue(kShareAssetId).fromBase58String()
+    (strAssetIdA, strAssetIdB, assetIdA, assetIdB, shareAssetId)
+}
+
+func getFeeParams(pool:Address) = {
+    let fee = pool.getIntegerValue(kFee)
+    let govFee = fee.fraction(40, 100) #40% of fee send to the governance address
+    (fee, govFee)
+}
+
+@Callable(i)
+func init(callerBytes: ByteVector, args: List[String], pAmounts: List[Int], pAssetIds: List[ByteVector]) = {
+    let caller = Address(callerBytes)
+    let (pmtAmountA, pmtAssetIdA) = (pAmounts[0], pAssetIds[0])
+    let (pmtAmountB, pmtAssetIdB) = (pAmounts[1], pAssetIds[1])
+
+    if ![adminPubKey1, adminPubKey2, adminPubKey3, adminInvokePubKey].containsElement(i.originCallerPublicKey) then
+        throw("Only admin can call this function")
+    else if caller.getBoolean(kActive).isDefined() then
+        throw("DApp is already active")
+    else if pmtAssetIdA == pmtAssetIdB then
+        throw("Assets must be different")
+    else {
+        let (pmtStrAssetIdA, pmtAssetNameA, pmtDecimalsA) = getAssetInfo(pmtAssetIdA)
+        let (pmtStrAssetIdB, pmtAssetNameB, pmtDecimalsB) = getAssetInfo(pmtAssetIdB)
+        let firstHarvest = { args[0] == "true" }
+        let shareName = "s" + pmtAssetNameA.take(7) + "_" + pmtAssetNameB.take(7)
+        let shareDescription = "ShareToken of SwopFi protocol for " + pmtAssetNameA + " and " + pmtAssetNameB + " at address " + this.toString()
+
+        let shareDecimals = (pmtDecimalsA + pmtDecimalsB) / 2
+
+        let arg1 = pow(pmtAmountA, pmtDecimalsA, 5, 1, pmtDecimalsA, DOWN)
+        let arg2 = pow(pmtAmountB, pmtDecimalsB, 5, 1, pmtDecimalsB, DOWN)
+        let arg3 = pow(10, 0, shareDecimals, 0, 0, DOWN)
+
+        let shareInitialSupply = fraction(
+            arg1,arg2,arg3
+        )
+
+        let shareIssue = Issue(shareName, shareDescription, shareInitialSupply, shareDecimals, true)
+        let shareIssueId = shareIssue.calculateAssetId()
+        strict stake1 = if stakingAssets.contains(pmtStrAssetIdA) then
+                invoke(i.caller, "stakeUnstake", [true, pmtAmountA, pmtStrAssetIdA], []) else 0
+            strict stake2 = if stakingAssets.contains(pmtStrAssetIdB) then
+                invoke(i.caller, "stakeUnstake", [true, pmtAmountB, pmtStrAssetIdB], []) else 0
+        let baseEntry = [
+            StringEntry(kVersion, version),
+            BooleanEntry(kActive, true),
+            StringEntry(kAssetIdA, pmtStrAssetIdA),
+            StringEntry(kAssetIdB, pmtStrAssetIdB),
+            IntegerEntry(kBalanceA, pmtAmountA),
+            IntegerEntry(kBalanceB, pmtAmountB),
+            IntegerEntry(kFee, oracle.getIntegerValue("base_fee_cpmm")),
+            shareIssue,
+            StringEntry(kShareAssetId, shareIssueId.toBase58String()),
+            IntegerEntry(kShareAssetSupply, shareInitialSupply),
+            ScriptTransfer(caller, shareInitialSupply, shareIssueId)
+        ]
+        if (firstHarvest) then {
+            ([], baseEntry ++ [
+                BooleanEntry(kFirstHarvest, firstHarvest),
+                IntegerEntry(kFirstHarvestHeight, startHeight + firstHarvestEndPeriod * periodLength)
+            ])
+        } else {
+            ([], baseEntry)
+        }
+    }
+}
+
+@Callable(i)
+func initWithInitRatio(callerBytes: ByteVector, args: List[String], pAmounts: List[Int], pAssetIds: List[ByteVector]) = {
+    let caller = Address(callerBytes)
+    let (amtAssetA, amtAssetB, assetIdAStr, assetIdBStr, firstHarvest) = (
+        parseIntValue(args[0]),
+        parseIntValue(args[1]),
+        args[2],
+        args[3],
+        args[4] == "true"
+    )
+
+    if ![adminPubKey1, adminPubKey2, adminPubKey3, adminInvokePubKey].containsElement(i.originCallerPublicKey) then
+        throw("Only admin can call this function")
+    else if caller.getBoolean(kActive).isDefined() then
+        throw("DApp is already active")
+    else if assetIdAStr == assetIdBStr then
+        throw("Assets must be different")
+    else {
+        let (pmtStrAssetIdA, pmtAssetNameA, pmtDecimalsA) = getAssetInfo(assetIdAStr)
+        let (pmtStrAssetIdB, pmtAssetNameB, pmtDecimalsB) = getAssetInfo(assetIdBStr)
+
+        let shareName = "s" + pmtAssetNameA.take(7) + "_" + pmtAssetNameB.take(7)
+        let shareDescription = "ShareToken of SwopFi protocol for " + pmtAssetNameA + " and " + pmtAssetNameB + " at address " + this.toString()
+
+        let shareDecimals = (pmtDecimalsA + pmtDecimalsB) / 2
+        let shareInitialSupply = 0
+        let shareIssue = Issue(shareName, shareDescription, shareInitialSupply, shareDecimals, true)
+        let shareIssueId = shareIssue.calculateAssetId()
+        let baseEntry =         [
+            StringEntry(kVersion, version),
+            BooleanEntry(kActive, true),
+            StringEntry(kAssetIdA, pmtStrAssetIdA),
+            StringEntry(kAssetIdB, pmtStrAssetIdB),
+            IntegerEntry(kBalanceInitA, amtAssetA),
+            IntegerEntry(kBalanceInitB, amtAssetB),
+            IntegerEntry(kBalanceA, 0),
+            IntegerEntry(kBalanceB, 0),
+            IntegerEntry(kFee, oracle.getIntegerValue("base_fee_cpmm")),
+            shareIssue,
+            StringEntry(kShareAssetId, shareIssueId.toBase58String()),
+            IntegerEntry(kShareAssetSupply, shareInitialSupply)
+        ]
+
+        if (firstHarvest) then {
+            ([], baseEntry ++ [
+                BooleanEntry(kFirstHarvest, firstHarvest),
+                IntegerEntry(kFirstHarvestHeight, startHeight + firstHarvestEndPeriod * periodLength)
+            ])
+        } else {
+            ([], baseEntry)
+        }
+    }
+}
+
+@Callable(i)
+func keepLimitForFirstHarvest(callerBytes: ByteVector, args: List[String], pAmounts: List[Int], pAssetIds: List[ByteVector]) = isActive().valueOrElse({
+    if ![adminPubKey1, adminPubKey2, adminPubKey3, adminInvokePubKey].containsElement(i.originCallerPublicKey) then
+        throw("Only admin can call this function")
+    else
+        let shareLimit = parseIntValue(args[0])
+        ([], [
+            IntegerEntry(kShareLimit, shareLimit)
+        ])
+})
+
+@Callable(i)
+func exchange(callerBytes: ByteVector, args: List[String], pAmounts: List[Int], pAssetIds: List[ByteVector]) = isActive().valueOrElse({
+    let caller = Address(callerBytes)
+    let (pmtAmount, pmtAssetId) = (pAmounts[0], pAssetIds[0])
+    let minAmountToReceive = parseIntValue(args[0])
+    let (strAssetIdA, strAssetIdB, assetIdA, assetIdB) = getPoolAssets(i.caller)
+    let (balanceA, balanceB, accountBalanceA, accountBalanceB) = getPoolBalances(i.caller, assetIdA, assetIdB)
+
+    if balanceA == 0 || balanceB == 0 then
+        throw("Can't exchange with zero balance")
+    else if minAmountToReceive <= 0 then
+        throw("Minimal amount to receive must be positive. Actual: " + minAmountToReceive.toString())
+    else if pAmounts.size() != 1 then
+        throw("One attached payment expected")
+    else if ![assetIdA, assetIdB].containsElement(pmtAssetId) then
+        throw("Incorrect asset attached. Expected: " + strAssetIdA + " or " + strAssetIdB)
+    else if accountBalanceA < balanceA || accountBalanceB < balanceB then
+        ([],
+        [
+            ScriptTransfer(caller, pmtAmount, pmtAssetId)
+        ] ++ suspendSuspicious(accountBalanceA, accountBalanceB, balanceA, balanceB, strAssetIdA, strAssetIdB))
+    else
+        let (fee, govFee) = getFeeParams(i.caller)
+        let (amountWithoutFee, amountWithFee, governanceReward) =
+            if pmtAssetId == assetIdA then
+                calculateFees(pmtAmount, minAmountToReceive, balanceA, balanceB, fee, govFee, i.originCaller)
+            else
+                calculateFees(pmtAmount, minAmountToReceive, balanceB, balanceA, fee, govFee, i.originCaller)
+
+        let (newBalanceA, newBalanceB, assetIdSend) =
+            if pmtAssetId == assetIdA then
+                (balanceA + pmtAmount, balanceB - amountWithFee - governanceReward, assetIdB)
+            else
+                (balanceA - amountWithFee - governanceReward, balanceB + pmtAmount, assetIdA)
+
+        let (stakeAmountA, stakeAmountB) =
+            if pmtAssetId == assetIdA then
+                (pmtAmount, amountWithFee + governanceReward)
+            else
+                (amountWithFee + governanceReward, pmtAmount)
+
+        strict stake1 = if stakingAssets.contains(strAssetIdA) then
+            invoke(i.caller, "stakeUnstake", [pmtAssetId == assetIdA, stakeAmountA, strAssetIdA], []) else 0
+        strict stake2 = if stakingAssets.contains(strAssetIdB) then
+            invoke(i.caller, "stakeUnstake", [pmtAssetId == assetIdB, stakeAmountB, strAssetIdB], []) else 0
+
+        ([], [
+            IntegerEntry(kBalanceA, newBalanceA),
+            IntegerEntry(kBalanceB, newBalanceB),
+            ScriptTransfer(caller, amountWithFee, assetIdSend),
+            ScriptTransfer(moneyBoxAddress, governanceReward, assetIdSend)
+        ])
+})
+
+@Callable(i)
+func replenishWithTwoTokens(callerBytes: ByteVector, args: List[String], pAmounts: List[Int], pAssetIds: List[ByteVector]) = isActive().valueOrElse({
+    let caller = Address(callerBytes)
+    let pmtAssetIdA = pAssetIds[0]
+    let pmtAssetIdB = pAssetIds[1]
+
+    let (strAssetIdA, strAssetIdB, assetIdA, assetIdB, shareAssetId) = getPoolAssets(i.caller)
+    let (balanceA, balanceB, accountBalanceA, accountBalanceB, shareAssetSupply) = getPoolBalances(i.caller, assetIdA, assetIdB)
+
+    if pAmounts.size() != 2 then
+        throw("Two attached assets expected")
+    else if pmtAssetIdA != assetIdA || pmtAssetIdB != assetIdB then
+        throw("Incorrect assets attached. Expected: " + strAssetIdA + " and " + strAssetIdB)
+    else if accountBalanceA < balanceA || accountBalanceB < balanceB then
+         ([], [
+            ScriptTransfer(caller, pAmounts[0], pmtAssetIdA),
+            ScriptTransfer(caller, pAmounts[1], pmtAssetIdB)
+        ] ++ suspendSuspicious(accountBalanceA, accountBalanceB, balanceA, balanceB, strAssetIdA, strAssetIdB))
+    else
+
+        let (pmtStrAssetIdA, pmtAssetNameA, pmtDecimalsA) = getAssetInfo(pmtAssetIdA)
+        let (pmtStrAssetIdB, pmtAssetNameB, pmtDecimalsB) = getAssetInfo(pmtAssetIdB)
+        let initial = (balanceA + balanceB) == 0
+
+        let (pmtAmountA, pmtAmountB, change, changeAssetId, shareTokenRatio) =
+            if initial then
+                (pAmounts[0], pAmounts[1], 0, pmtAssetIdA, 1)
+            else
+                let ratioShareTokensInA = scale8.fraction(pAmounts[0], balanceA)
+                let ratioShareTokensInB = scale8.fraction(pAmounts[1], balanceB)
+                if(ratioShareTokensInA < ratioShareTokensInB) then
+                    let pmt = fraction(pAmounts[0], balanceB, balanceA)
+                    (pAmounts[0], pmt, pAmounts[1] - pmt, pmtAssetIdB, ratioShareTokensInA)
+                else
+                    let pmt = fraction(pAmounts[1], balanceA, balanceB)
+                    (pmt, pAmounts[1], pAmounts[0] - pmt, pmtAssetIdA, ratioShareTokensInB)
+
+    let shareTokenToPayAmount =
+        if initial then
+            let shareDecimals = (pmtDecimalsA + pmtDecimalsB) / 2
+            fraction(
+                pow(pmtAmountA, pmtDecimalsA, 5, 1, pmtDecimalsA, DOWN),
+                pow(pmtAmountB, pmtDecimalsB, 5, 1, pmtDecimalsB, DOWN),
+                pow(10, 0, shareDecimals, 0, 0, DOWN)
+            )
+        else
+            shareTokenRatio.fraction(shareAssetSupply, scale8)
+    if shareTokenToPayAmount == 0 then
+        throw("Too small amount to replenish")
+    else if change < 0 then
+        throw("Change < 0")
+    else
+        strict stake1 = if stakingAssets.contains(pmtStrAssetIdA) then
+            invoke(i.caller, "stakeUnstake", [true, pmtAmountA, pmtStrAssetIdA], []) else 0
+        strict stake2 = if stakingAssets.contains(pmtStrAssetIdB) then
+            invoke(i.caller, "stakeUnstake", [true, pmtAmountB, pmtStrAssetIdB], []) else 0
+        ([], [
+            Reissue(shareAssetId, shareTokenToPayAmount, true),
+            IntegerEntry(kBalanceA, balanceA + pmtAmountA),
+            IntegerEntry(kBalanceB, balanceB + pmtAmountB),
+            IntegerEntry(kShareAssetSupply, shareAssetSupply + shareTokenToPayAmount),
+            ScriptTransfer(caller, shareTokenToPayAmount, shareAssetId),
+            ScriptTransfer(caller, change, changeAssetId)
+        ])
+})
+
+@Callable(i)
+func replenishWithOneToken(callerBytes: ByteVector, args: List[String], pAmounts: List[Int], pAssetIds: List[ByteVector]) = isActive().valueOrElse({
+    let caller = Address(callerBytes)
+    let pmtAssetId = pAssetIds[0]
+    let pmtAmount = pAmounts[0]
+    let virtMinAmount = parseIntValue(args[0])
+
+    let (strAssetIdA, strAssetIdB, assetIdA, assetIdB, shareAssetId) = getPoolAssets(i.caller)
+    let (balanceA, balanceB, accountBalanceA, accountBalanceB, shareAssetSupply) = getPoolBalances(i.caller, assetIdA, assetIdB)
+    let initial = (balanceA + balanceB) == 0
+
+    if pAmounts.size() != 1 then
+        throw("One attached assets expected")
+    else if pmtAssetId != assetIdA && pmtAssetId != assetIdB then
+        throw("Incorrect asset attached. Expected: " + strAssetIdA + " or " + strAssetIdB)
+    else if initial then
+        throw("For initial exchanger you need to use two tokens")
+    else if accountBalanceA < balanceA || accountBalanceB < balanceB then
+         ([], [
+            ScriptTransfer(caller, pmtAmount, pmtAssetId)
+        ] ++ suspendSuspicious(accountBalanceA, accountBalanceB, balanceA, balanceB, strAssetIdA, strAssetIdB))
+    else
+        let (fee, govFee) = getFeeParams(i.caller)
+        let (newBalanceA, newBalanceB, shareTokenToPayAmount, govReward, govRewardAsset, govRewardAssetStr, pmtAssetIdStr) =
+            if pmtAssetId == assetIdA then
+                let ( amountWithoutFee, amountWithFee, governanceReward) = calculateFees(pmtAmount, virtMinAmount, balanceA, balanceB, fee, govFee, i.originCaller)
+                let newBalanceA = balanceA + pmtAmount
+                let newBalanceB = balanceB - governanceReward
+                let ratioShareTokensInA = fraction(pmtAmount / 2, scale8, newBalanceA)
+                let ratioShareTokensInB = fraction(amountWithFee, scale8, newBalanceB)
+                let shareTokenToPayAmount = min([ratioShareTokensInA, ratioShareTokensInB]).fraction(shareAssetSupply, scale8)
+                (newBalanceA, newBalanceB, shareTokenToPayAmount, governanceReward, assetIdB, strAssetIdB, strAssetIdA)
+            else
+                let ( amountWithoutFee, amountWithFee, governanceReward) = calculateFees(pmtAmount, virtMinAmount, balanceB, balanceA, fee, govFee, i.originCaller)
+                let newBalanceA = balanceA - governanceReward
+                let newBalanceB = balanceB + pmtAmount
+                let ratioShareTokensInA = fraction(amountWithFee, scale8, newBalanceA)
+                let ratioShareTokensInB = fraction(pmtAmount / 2, scale8, newBalanceB)
+                let shareTokenToPayAmount = min([ratioShareTokensInA, ratioShareTokensInB]).fraction(shareAssetSupply, scale8)
+                (newBalanceA, newBalanceB, shareTokenToPayAmount, governanceReward, assetIdA, strAssetIdA, strAssetIdB)
+        if shareTokenToPayAmount == 0 then
+            throw("Too small amount to replenish")
+        else
+            strict stake1 = if stakingAssets.contains(pmtAssetIdStr) then
+                invoke(i.caller, "stakeUnstake", [true, pmtAmount, pmtAssetId], []) else 0
+
+            strict stake2 = if stakingAssets.contains(govRewardAssetStr) then
+                invoke(i.caller, "stakeUnstake", [false, govReward, govRewardAssetStr], []) else 0
+            ([], [
+                    IntegerEntry(kBalanceA, newBalanceA),
+                    IntegerEntry(kBalanceB, newBalanceB),
+                    IntegerEntry(kShareAssetSupply, shareAssetSupply + shareTokenToPayAmount),
+                    Reissue(shareAssetId, shareTokenToPayAmount, true),
+                    ScriptTransfer(caller, shareTokenToPayAmount, shareAssetId),
+                    ScriptTransfer(moneyBoxAddress, govReward, govRewardAsset)
+            ])
+
+})
+
+@Callable(i)
+func withdraw(callerBytes: ByteVector, args: List[String], pAmounts: List[Int], pAssetIds: List[ByteVector]) = isActive().valueOrElse({
+    let caller = Address(callerBytes)
+    let (pmtAmount, pmtAssetId) = (pAmounts[0], pAssetIds[0])
+
+    let (strAssetIdA, strAssetIdB, assetIdA, assetIdB, shareAssetId) = getPoolAssets(i.caller)
+    let (balanceA, balanceB, accountBalanceA, accountBalanceB, shareAssetSupply) = getPoolBalances(i.caller, assetIdA, assetIdB)
+
+    if pAmounts.size() != 1 then
+        throw("One attached payment expected")
+    else if pmtAssetId != shareAssetId then
+        throw("Incorrect asset attached. Expected: " + shareAssetId.toBase58String())
+   else if accountBalanceA < balanceA || accountBalanceB < balanceB then
+         ([], [
+            ScriptTransfer(caller, pmtAmount, pmtAssetId)
+        ] ++ suspendSuspicious(accountBalanceA, accountBalanceB, balanceA, balanceB, strAssetIdA, strAssetIdB))
+    else
+        let amountToPayA = pmtAmount.fraction(balanceA, shareAssetSupply)
+        let amountToPayB = pmtAmount.fraction(balanceB, shareAssetSupply)
+        strict stake1 = if stakingAssets.contains(strAssetIdA) then
+            invoke(i.caller, "stakeUnstake", [false, amountToPayA, strAssetIdA], []) else 0
+        strict stake2 = if stakingAssets.contains(strAssetIdB) then
+            invoke(i.caller, "stakeUnstake", [false, amountToPayB, strAssetIdB], []) else 0
+        ([], [
+            IntegerEntry(kBalanceA, balanceA - amountToPayA),
+            IntegerEntry(kBalanceB, balanceB - amountToPayB),
+            IntegerEntry(kShareAssetSupply, shareAssetSupply - pmtAmount),
+            Burn(shareAssetId, pmtAmount),
+            ScriptTransfer(caller, amountToPayA, assetIdA),
+            ScriptTransfer(caller, amountToPayB, assetIdB)
+        ])
+})
+
+@Callable(i)
+func takeIntoAccountExtraFunds(callerBytes: ByteVector, args: List[String], pAmounts: List[Int], pAssetIds: List[ByteVector]) = isActive().valueOrElse({
+    let (strAssetIdA, strAssetIdB, assetIdA, assetIdB) = getPoolAssets(i.caller)
+    let (balanceA, balanceB, accountBalanceA, accountBalanceB) = getPoolBalances(i.caller, assetIdA, assetIdB)
+    let amountEnrollA = accountBalanceA - balanceA
+    let amountEnrollB = accountBalanceB - balanceB
+
+    if moneyBoxAddress != i.originCaller then
+        throw("Only the wallet can call this function")
+    else if amountEnrollA < 0 || amountEnrollB < 0 then
+        suspend("Enroll amount negative")
+    else if amountEnrollA == 0 && amountEnrollB == 0 then
+        throw("No money to take")
+    else
+        strict stake1 = if stakingAssets.contains(strAssetIdA) && amountEnrollA > 0 then
+            invoke(this, "stakeUnstake", [true, amountEnrollA, strAssetIdA], []) else 0
+        strict stake2 = if stakingAssets.contains(strAssetIdB) && amountEnrollB > 0 then
+            invoke(this, "stakeUnstake", [true, amountEnrollB, strAssetIdB], []) else 0
+        ([], [
+            IntegerEntry(kBalanceA, balanceA + amountEnrollA),
+            IntegerEntry(kBalanceB, balanceB + amountEnrollB)
+        ])
+})
+
+@Verifier(tx)
+func verify() = {
+  let multiSignedByAdmins = {
+        let adminPubKey1Signed = if sigVerify(tx.bodyBytes, tx.proofs[0], adminPubKey1) then 1 else 0
+        let adminPubKey2Signed = if sigVerify(tx.bodyBytes, tx.proofs[1], adminPubKey2) then 1 else 0
+        let adminPubKey3Signed = if sigVerify(tx.bodyBytes, tx.proofs[2], adminPubKey3) then 1 else 0
+        adminPubKey1Signed + adminPubKey2Signed + adminPubKey3Signed >= 2
+  }
+  multiSignedByAdmins
+}

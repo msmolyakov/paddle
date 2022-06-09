@@ -472,10 +472,11 @@ public class Account {
     }
 
     public SetScriptTransactionInfo setScript(Base64String compiledScript, Consumer<CommonParams<?>> params) {
-        CommonParams<?> common = new CommonParams<>(this, SetScriptTransaction.MIN_FEE);
+        SetScriptParams common = new SetScriptParams(this);
         params.accept(common);
         if (common.signers.size() == 0)
             common.signedBy(common.sender);
+        common.compiledScript(compiledScript);
         Transaction signedTx = signAndGet(common.signers,
                 SetScriptTransaction.builder(compiledScript)
                         .sender(common.sender.publicKey())

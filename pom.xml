@@ -6,7 +6,7 @@
 
     <groupId>im.mak</groupId>
     <artifactId>paddle</artifactId>
-    <version>1.0.0-rc11</version>
+    <version>1.0.0-rc12</version>
 
     <name>Paddle</name>
     <description>Paddle library helps developers to write tests for smart contracts on Waves blockchain</description>
@@ -201,12 +201,17 @@
         <dependency>
             <groupId>com.wavesplatform</groupId>
             <artifactId>wavesj</artifactId>
-            <version>1.2.4</version>
+            <version>1.3.0</version>
         </dependency>
         <dependency>
             <groupId>com.spotify</groupId>
             <artifactId>docker-client</artifactId>
             <version>8.16.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-artifact</artifactId>
+            <version>3.8.5</version>
         </dependency>
 
         <!-- Configuration -->
